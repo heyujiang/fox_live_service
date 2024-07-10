@@ -2,16 +2,18 @@ package router
 
 import (
 	"fmt"
-	"fox_live_service/config/global"
-	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"
 	"os"
 	"time"
+
+	"fox_live_service/config/global"
+
+	"github.com/gin-gonic/gin"
 )
 
 func Register() *gin.Engine {
-	if !global.Config.GetBool("AppDebug") {
+	if !global.Config.GetBool("Debug") {
 		gin.SetMode(gin.ReleaseMode)
 		gin.DefaultWriter = io.MultiWriter(global.AccessLog, os.Stdout)
 	}

@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"fox_live_service/config/global"
-	"fox_live_service/router"
 	"log"
 	"net/http"
 	"os"
@@ -13,12 +11,21 @@ import (
 	"time"
 
 	_ "fox_live_service/config"
+	"fox_live_service/config/global"
+	"fox_live_service/router"
+
+	"golang.org/x/exp/slog"
 )
 
 func main() {
+	slog.Info("Start server ...")
+
 	handler := router.Register()
 
-	srv := &http.Server{Addr: fmt.Sprintf("%s:%d", global.Config.GetString("Host"), global.Config.GetInt("Port")), Handler: handler}
+	srv := &http.Server{
+		Addr:    fmt.Sprintf("%s:%d", global.Config.GetString("Host"), global.Config.GetInt("Port")),
+		Handler: handler,
+	}
 
 	go func() {
 		err := srv.ListenAndServe()
@@ -33,8 +40,7 @@ func main() {
 	<-quit
 
 	//退出业务处理
-
-	log.Println("Shutdown Server ...")
+	slog.Info("Shutdown Server ...")
 
 	cancelCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

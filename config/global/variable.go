@@ -10,10 +10,6 @@ var (
 
 	LogPath = "storages/logs"
 
-	LogMode = "console"
-
-	LogEncoding = "json"
-
 	ConfigPath        = "/home/autowise/work/go/fox_live_service/config_path"
 	ConfigFile        = "config"
 	ConfigCachePrefix = "config_"

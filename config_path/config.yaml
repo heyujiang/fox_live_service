@@ -1,6 +1,9 @@
-AppDebug: true
+Name: "FoxLiveService"
+Debug: true
 Port: 1995
 Host: "127.0.0.1"
+
+LogPath: "storages/logs"
 
 BasePath: "~/work/go/work/fox_live_service"
 LogsPath: "~/work/go/work/fox_live_service/logs_path"

@@ -2,14 +2,13 @@ package config
 
 import (
 	"flag"
+	"golang.org/x/exp/slog"
 	"log"
 	"os"
 	"path"
 
 	"fox_live_service/config/global"
 	"fox_live_service/pkg/library/configx"
-
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 var (
@@ -24,19 +23,16 @@ func init() {
 
 	initConfig()
 
-	logx.MustSetup(logx.LogConf{
-		Mode:     global.LogMode,
-		Path:     path.Join(global.WorkPath, global.LogPath),
-		Encoding: global.LogEncoding,
-	})
-	logx.Infof("fox-live-server config init...")
+	initLog()
 
-	httpLogPath := path.Join(global.WorkPath, global.LogPath, "http.log") //gin框架的日志
-	file, err := os.OpenFile(httpLogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0755)
-	if err != nil {
-		log.Fatalln(err)
+	if !global.Config.GetBool("Debug") {
+		httpLogPath := path.Join(global.WorkPath, global.LogPath, "http.log") //gin框架的日志
+		file, err := os.OpenFile(httpLogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0755)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		global.AccessLog = file
 	}
-	global.AccessLog = file
 }
 
 func initEnv(workPath, configPath string, configFile string) {
@@ -60,4 +56,30 @@ func initEnv(workPath, configPath string, configFile string) {
 func initConfig() {
 	global.Config = configx.NewConfigX(global.ConfigPath, global.ConfigCachePrefix, global.ConfigFile)
 	global.Config.WatchConfig()
+}
+
+func initLog() {
+	var handler slog.Handler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		AddSource:   true,
+		Level:       slog.LevelDebug,
+		ReplaceAttr: nil,
+	})
+
+	if !global.Config.GetBool("Debug") {
+		logPath := path.Join(global.WorkPath, global.Config.GetString("LogPath"), global.Config.GetString("Name")+".log")
+		logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0755)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		handler = slog.NewJSONHandler(logFile, &slog.HandlerOptions{
+			AddSource:   true,
+			Level:       slog.LevelInfo,
+			ReplaceAttr: nil,
+		})
+	}
+	logger := slog.New(handler)
+	slog.NewLogLogger(logger.Handler(), slog.LevelDebug)
+
+	slog.SetDefault(logger)
 }
