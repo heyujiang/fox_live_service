@@ -2,13 +2,15 @@ package config
 
 import (
 	"flag"
-	"golang.org/x/exp/slog"
 	"log"
 	"os"
 	"path"
 
 	"fox_live_service/config/global"
 	"fox_live_service/pkg/library/configx"
+
+	"golang.org/x/exp/slog"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 var (
@@ -67,12 +69,15 @@ func initLog() {
 
 	if !global.Config.GetBool("Debug") {
 		logPath := path.Join(global.WorkPath, global.Config.GetString("LogPath"), global.Config.GetString("Name")+".log")
-		logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0755)
-		if err != nil {
-			log.Fatalln(err)
-		}
 
-		handler = slog.NewJSONHandler(logFile, &slog.HandlerOptions{
+		handler = slog.NewJSONHandler(&lumberjack.Logger{
+			Filename:   logPath,
+			MaxSize:    100,
+			MaxAge:     20,
+			MaxBackups: 30,
+			LocalTime:  true,
+			Compress:   true,
+		}, &slog.HandlerOptions{
 			AddSource:   true,
 			Level:       slog.LevelInfo,
 			ReplaceAttr: nil,

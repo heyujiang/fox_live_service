@@ -1,5 +1,5 @@
 Name: "FoxLiveService"
-Debug: true
+Debug: false
 Port: 1995
 Host: "127.0.0.1"
 

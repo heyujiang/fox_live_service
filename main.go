@@ -20,6 +20,12 @@ import (
 func main() {
 	slog.Info("Start server ...")
 
+	go func() {
+		for {
+			slog.Info("Logging ...")
+		}
+	}()
+
 	handler := router.Register()
 
 	srv := &http.Server{
