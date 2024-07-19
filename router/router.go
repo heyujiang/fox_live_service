@@ -39,7 +39,7 @@ func Register() *gin.Engine {
 	e.Use(gin.Recovery(), gin.LoggerWithConfig(c))
 
 	e.GET("/", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{})
+		c.String(http.StatusOK, "Welcome to fox...")
 	})
 
 	registerUser(e)

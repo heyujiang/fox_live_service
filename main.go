@@ -10,9 +10,9 @@ import (
 	"syscall"
 	"time"
 
-	_ "fox_live_service/config"
 	"fox_live_service/config/global"
 	_ "fox_live_service/log"
+	_ "fox_live_service/model"
 	"fox_live_service/router"
 
 	"golang.org/x/exp/slog"

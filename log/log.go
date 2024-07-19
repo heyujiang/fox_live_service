@@ -1,6 +1,8 @@
 package log
 
 import (
+	_ "fox_live_service/config"
+
 	"fox_live_service/config/global"
 	"golang.org/x/exp/slog"
 	"gopkg.in/natefinch/lumberjack.v2"
