@@ -12,6 +12,7 @@ import (
 
 	_ "fox_live_service/config"
 	"fox_live_service/config/global"
+	_ "fox_live_service/log"
 	"fox_live_service/router"
 
 	"golang.org/x/exp/slog"
@@ -19,12 +20,6 @@ import (
 
 func main() {
 	slog.Info("Start server ...")
-
-	go func() {
-		for {
-			slog.Info("Logging ...")
-		}
-	}()
 
 	handler := router.Register()
 

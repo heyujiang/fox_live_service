@@ -15,7 +15,7 @@ import (
 func Register() *gin.Engine {
 	if !global.Config.GetBool("Debug") {
 		gin.SetMode(gin.ReleaseMode)
-		gin.DefaultWriter = io.MultiWriter(global.AccessLog, os.Stdout)
+		gin.DefaultWriter = io.MultiWriter(global.HttpLog, os.Stdout)
 	}
 
 	e := gin.New()

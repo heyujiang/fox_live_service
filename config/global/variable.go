@@ -16,7 +16,7 @@ var (
 )
 
 var (
-	AccessLog *os.File
+	HttpLog *os.File
 
 	Config configx.ConfigI
 )
