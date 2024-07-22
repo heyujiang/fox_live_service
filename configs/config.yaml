@@ -1,0 +1,16 @@
+Name: "fox"
+Debug: true
+Port: 1995
+Host: "127.0.0.1"
+
+LogPath: "storages/logs"
+
+BasePath: "~/work/go/work/fox_live_service"
+LogsPath: "~/work/go/work/fox_live_service/logs_path"
+
+Db:
+  DbType: "mysql"
+  Mysql:
+    DSN: "root:123456@tcp(127.0.0.1:3306)/fox?charset=utf8&parseTime=True&loc=Asia%2FShanghai"
+    MaxIdleConn: 20
+    MaxOpenConn: 200

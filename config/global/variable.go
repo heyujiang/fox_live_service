@@ -10,9 +10,8 @@ var (
 
 	LogPath = "storages/logs"
 
-	ConfigPath        = "/home/autowise/work/go/fox_live_service/config_path"
-	ConfigFile        = "config"
-	ConfigCachePrefix = "config_"
+	ConfigPath = "/home/autowise/work/go/fox_live_service/configs"
+	ConfigFile = "config"
 )
 
 var (

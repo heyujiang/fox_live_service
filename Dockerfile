@@ -1,4 +1,4 @@
 FROM ubuntu:latest
-LABEL authors="autowise"
+LABEL authors="jinagyu"
 
 ENTRYPOINT ["top", "-b"]
