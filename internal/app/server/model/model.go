@@ -18,8 +18,6 @@ func init() {
 
 type Model struct {
 	Id        uint      `db:"id"`
-	CreateId  uint      `db:"create_id"`
-	UpdateId  uint      `db:"update_id"`
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 }

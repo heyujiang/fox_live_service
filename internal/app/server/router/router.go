@@ -3,6 +3,7 @@ package router
 import (
 	"fmt"
 	"fox_live_service/config/global"
+	"fox_live_service/internal/app/server/middleware"
 	"io"
 	"net/http"
 	"os"
@@ -35,13 +36,15 @@ func Register() *gin.Engine {
 			)
 		},
 	}
-	e.Use(gin.Recovery(), gin.LoggerWithConfig(c))
+	e.Use(gin.Recovery(), gin.LoggerWithConfig(c), middleware.Cors())
 
 	e.GET("/", func(c *gin.Context) {
 		c.String(http.StatusOK, "Welcome to fox...")
 	})
 
 	registerUser(e)
+	registerProject(e)
+	registerNode(e)
 
 	return e
 }
