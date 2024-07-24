@@ -4,10 +4,6 @@ import (
 	"errors"
 )
 
-const (
-	UnknownCode = 99999
-)
-
 type ErrorX struct {
 	Code int
 	error
@@ -45,7 +41,8 @@ func (e *ErrorX) Error() string {
 }
 
 func ParseErrorX(err error) *ErrorX {
-	errorX, ok := err.(*ErrorX)
+	var errorX *ErrorX
+	ok := errors.As(err, &errorX)
 	if !ok {
 		return NewErrorX(UnknownCode, errors.New("unknow error"))
 	}

@@ -1,19 +1,22 @@
 package model
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"golang.org/x/exp/slog"
+	"time"
 )
 
 const (
 	UserStatusEnable = iota + 1
 	UserStatusDisable
+
+	inertStr = "`username`,`password`,`phone_number`,`email`,`name`,`nick_name`,`avatar`,`state`,`created_id`,`updated_id`"
 )
 
 var (
 	UserModel = newUserModel()
-
-	inertStr = "`username`,`password`,`phone_number`,`email`,`name`,`nick_name`,`avatar`,`state`,`create_id`,`update_id`"
 
 	UserStatusDesc = map[int]string{
 		UserStatusEnable:  "启用",
@@ -23,17 +26,19 @@ var (
 
 type (
 	User struct {
-		Model
-		Username    string `db:"username"`
-		Password    string `db:"password"`
-		PhoneNumber string `db:"phone_number"`
-		Email       string `db:"email"`
-		Name        string `db:"name"`
-		NickName    string `db:"nick_name"`
-		Avatar      string `db:"avatar"`
-		State       int    `db:"state"`
-		CreatedId   uint   `db:"created_id"`
-		UpdatedId   uint   `db:"updated_id"`
+		Id          int       `db:"id"`
+		Username    string    `db:"username"`
+		Password    string    `db:"password"`
+		PhoneNumber string    `db:"phone_number"`
+		Email       string    `db:"email"`
+		Name        string    `db:"name"`
+		NickName    string    `db:"nick_name"`
+		Avatar      string    `db:"avatar"`
+		State       int       `db:"state"`
+		CreatedId   int       `db:"created_id"`
+		UpdatedId   int       `db:"updated_id"`
+		CreatedAt   time.Time `db:"created_at"`
+		UpdatedAt   time.Time `db:"updated_at"`
 	}
 
 	userModel struct {
@@ -41,7 +46,7 @@ type (
 	}
 
 	UserCond struct {
-		Id          uint
+		Id          int
 		PhoneNumber string
 		Name        string
 		State       int
@@ -54,11 +59,49 @@ func newUserModel() *userModel {
 	}
 }
 
+// Insert 插入数据
+func (m *userModel) Insert(user *User) error {
+	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?,?,?,?)", m.table, inertStr)
+	result, err := db.Exec(sqlStr, user.Username, user.Password, user.PhoneNumber, user.Email, user.Name, user.NickName, user.Avatar, user.State, user.CreatedId, user.UpdatedId)
+	if err != nil {
+		slog.Error("insert user err ", "sql", sqlStr, "err ", err.Error())
+		return err
+	}
+	lastInsertId, _ := result.LastInsertId()
+	user.Id = int(lastInsertId)
+	return nil
+}
+
+// Delete 更新数据
+func (m *userModel) Delete(id int) error {
+	sqlStr := fmt.Sprintf("delete table %s where `id` = ? ", m.table)
+	_, err := db.Exec(sqlStr, id)
+	if err != nil {
+		slog.Error("update user err ", "sql", sqlStr, "err ", err.Error())
+		return err
+	}
+	return nil
+}
+
+// Update 更新数据
+func (m *userModel) Update(user *User) error {
+	sqlStr := fmt.Sprintf("update %s set `phone_number` = ? , `email` = ? , `name`= ? , `nick_name`= ? , `acatar`= ? , `update_id` = ? where `id` = %d", m.table, user.Id)
+	_, err := db.Exec(sqlStr, user.PhoneNumber, user.Email, user.Name, user.NickName, user.Avatar, user.UpdatedId)
+	if err != nil {
+		slog.Error("update user err ", "sql", sqlStr, "err ", err.Error())
+		return err
+	}
+	return nil
+}
+
 // Find 根据主键id单条查询
-func (m *userModel) Find(id uint) (*User, error) {
+func (m *userModel) Find(id int) (*User, error) {
 	sqlStr := fmt.Sprintf("select * from %s where `id` = ?", m.table)
 	user := new(User)
 	if err := db.Get(user, sqlStr, id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotRecord
+		}
 		slog.Error("find user err ", "sql", sqlStr, "err ", err.Error())
 		return nil, err
 	}
@@ -74,6 +117,34 @@ func (m *userModel) Select() ([]*User, error) {
 		return nil, err
 	}
 	return users, nil
+}
+
+// FindByUsername 根据username查询用户信息
+func (m *userModel) FindByUsername(username string) (*User, error) {
+	sqlStr := fmt.Sprintf("select * from %s where `username` = ?", m.table)
+	user := new(User)
+	if err := db.Get(user, sqlStr, username); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotRecord
+		}
+		slog.Error("find user by username error", "sql", sqlStr, "username", username, "err ", err.Error())
+		return nil, err
+	}
+	return user, nil
+}
+
+// FindByPhoneNumber 根据 phoneNumber 查询用户信息
+func (m *userModel) FindByPhoneNumber(phoneNumber string) (*User, error) {
+	sqlStr := fmt.Sprintf("select * from %s where `phone_number` = ?", m.table)
+	user := new(User)
+	if err := db.Get(user, sqlStr, phoneNumber); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotRecord
+		}
+		slog.Error("find user by phone number error", "sql", sqlStr, "phone_number", phoneNumber, "err ", err.Error())
+		return nil, err
+	}
+	return user, nil
 }
 
 // GetUsersByCond 根据条件分页获取用户
@@ -100,41 +171,6 @@ func (m *userModel) GetUserCountCond(cond *UserCond) (count int, err error) {
 		return
 	}
 	return
-}
-
-// Insert 插入数据
-func (m *userModel) Insert(user *User) error {
-	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?,?,?,?)", m.table, inertStr)
-	result, err := db.Exec(sqlStr, user.Username, user.Password, user.PhoneNumber, user.Email, user.Name, user.NickName, user.Avatar, user.State, user.CreatedId, user.UpdatedId)
-	if err != nil {
-		slog.Error("insert user err ", "sql", sqlStr, "err ", err.Error())
-		return err
-	}
-	lastInsertId, _ := result.LastInsertId()
-	user.Id = uint(lastInsertId)
-	return nil
-}
-
-// Update 更新数据
-func (m *userModel) Update(user *User) error {
-	sqlStr := fmt.Sprintf("update %s set `phone_number` = ? , `email` = ? , `name`= ? , `nick_name`= ? , `acatar`= ? , `update_id` = ? where `id` = %d", m.table, user.Id)
-	_, err := db.Exec(sqlStr, user.PhoneNumber, user.Email, user.Name, user.NickName, user.Avatar, user.UpdatedId)
-	if err != nil {
-		slog.Error("update user err ", "sql", sqlStr, "err ", err.Error())
-		return err
-	}
-	return nil
-}
-
-// Delete 更新数据
-func (m *userModel) Delete(id uint) error {
-	sqlStr := fmt.Sprintf("delete table %s where `id` = ? ", m.table)
-	_, err := db.Exec(sqlStr, id)
-	if err != nil {
-		slog.Error("update user err ", "sql", sqlStr, "err ", err.Error())
-		return err
-	}
-	return nil
 }
 
 func (m *userModel) buildUserCond(cond *UserCond) (sqlCond string, args []interface{}) {

@@ -7,6 +7,7 @@ import (
 )
 
 func registerNode(e *gin.Engine) {
+
 	node := e.Group("/api/node", middleware.Auth())
 
 	node.GET("/list", handler.ProjectHandler.List)

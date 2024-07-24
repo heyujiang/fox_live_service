@@ -7,7 +7,7 @@ import (
 )
 
 func registerUser(e *gin.Engine) {
-	e.GET("/login", handler.UserHandler.Login) // 登录
+	e.POST("/login", handler.UserHandler.Login) // 登录
 
 	user := e.Group("/api/user").Use(middleware.Auth())
 	user.GET("/logout/:id", handler.UserHandler.Logout) // 退出

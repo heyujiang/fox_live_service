@@ -7,6 +7,7 @@ import (
 )
 
 func registerProject(e *gin.Engine) {
+
 	project := e.Group("/api/project", middleware.Auth())
 
 	project.GET("/list", handler.ProjectHandler.List)
