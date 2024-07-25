@@ -10,8 +10,21 @@ func registerProject(e *gin.Engine) {
 
 	project := e.Group("/api/project", middleware.Auth())
 
-	project.GET("/list", handler.ProjectHandler.List)
+	project.GET("", handler.ProjectHandler.List)
 	project.GET("/:id", handler.ProjectHandler.Info)
-	project.POST("", handler.ProjectHandler.Create)
-	project.POST("/:id", handler.ProjectHandler.Update)
+
+	project.GET("/nodes", handler.ProjectNodeHandler.List)
+
+	project.GET("/record", handler.ProjectRecordHandler.List)
+	project.POST("/record", handler.ProjectRecordHandler.Create)
+	project.DELETE("/record/:id", handler.ProjectRecordHandler.Delete)
+
+	project.GET("/person", handler.ProjectPersonHandler.List)
+	project.POST("/person", handler.ProjectPersonHandler.Create)
+	project.DELETE("/person/:id", handler.ProjectPersonHandler.Delete)
+
+	project.GET("/attached", handler.ProjectAttachedHandler.List)
+	project.POST("/attached", handler.ProjectAttachedHandler.Create)
+	project.DELETE("/attached/:id", handler.ProjectAttachedHandler.Delete)
+
 }

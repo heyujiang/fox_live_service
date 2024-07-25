@@ -96,7 +96,7 @@ func (m *userModel) Update(user *User) error {
 
 // Find 根据主键id单条查询
 func (m *userModel) Find(id int) (*User, error) {
-	sqlStr := fmt.Sprintf("select * from %s where `id` = ?", m.table)
+	sqlStr := fmt.Sprintf("select * from %s where `id` = ? limit 1", m.table)
 	user := new(User)
 	if err := db.Get(user, sqlStr, id); err != nil {
 		slog.Error("find user err ", "sql", sqlStr, "id", id, "err ", err.Error())
@@ -121,7 +121,7 @@ func (m *userModel) Select() ([]*User, error) {
 
 // FindByUsername 根据username查询用户信息
 func (m *userModel) FindByUsername(username string) (*User, error) {
-	sqlStr := fmt.Sprintf("select * from %s where `username` = ?", m.table)
+	sqlStr := fmt.Sprintf("select * from %s where `username` = ? limit 1", m.table)
 	user := new(User)
 	if err := db.Get(user, sqlStr, username); err != nil {
 		slog.Error("find user by username error", "sql", sqlStr, "username", username, "err ", err.Error())
@@ -135,7 +135,7 @@ func (m *userModel) FindByUsername(username string) (*User, error) {
 
 // FindByPhoneNumber 根据 phoneNumber 查询用户信息
 func (m *userModel) FindByPhoneNumber(phoneNumber string) (*User, error) {
-	sqlStr := fmt.Sprintf("select * from %s where `phone_number` = ?", m.table)
+	sqlStr := fmt.Sprintf("select * from %s where `phone_number` = ? limit 1", m.table)
 	user := new(User)
 	if err := db.Get(user, sqlStr, phoneNumber); err != nil {
 		slog.Error("find user by phone number error", "sql", sqlStr, "phone_number", phoneNumber, "err ", err.Error())
@@ -165,7 +165,7 @@ func (m *userModel) GetUsersByCond(cond *UserCond, pageIndex, pageSize int) ([]*
 // GetUserCountCond 根据条件获取用户数量
 func (m *userModel) GetUserCountCond(cond *UserCond) (count int, err error) {
 	sqlCond, args := m.buildUserCond(cond)
-	sqlStr := fmt.Sprintf("select count(*) n from %s where 1 = 1  %s", m.table, sqlCond)
+	sqlStr := fmt.Sprintf("select count(*) n from %s where 1 = 1 %s", m.table, sqlCond)
 	if err = db.Get(&count, sqlStr, args...); err != nil {
 		slog.Error("get user count error ", "sql", sqlStr, "err ", err.Error())
 		return

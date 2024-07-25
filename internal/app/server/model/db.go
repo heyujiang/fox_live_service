@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"fmt"
 	"fox_live_service/config/global"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -23,4 +24,24 @@ type Model struct {
 	Id        int       `db:"id"`
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
+}
+
+func transaction(tx *sqlx.Tx, fn func() error) (err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			if e := tx.Rollback(); e != nil {
+				err = fmt.Errorf("recover from %#v, rollback failed: %s", p, e)
+			} else {
+				err = fmt.Errorf("recover from %#v", p)
+			}
+		} else if err != nil {
+			if e := tx.Rollback(); e != nil {
+				err = fmt.Errorf("transaction failed: %s, rollback failed: %s", err, e)
+			}
+		} else {
+			err = tx.Commit()
+		}
+	}()
+	err = fn()
+	return err
 }
