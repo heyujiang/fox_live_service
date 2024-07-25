@@ -74,7 +74,7 @@ func (m *userModel) Insert(user *User) error {
 
 // Delete 更新数据
 func (m *userModel) Delete(id int) error {
-	sqlStr := fmt.Sprintf("delete table %s where `id` = ? ", m.table)
+	sqlStr := fmt.Sprintf("delete from %s where `id` = ? ", m.table)
 	_, err := db.Exec(sqlStr, id)
 	if err != nil {
 		slog.Error("update user err ", "sql", sqlStr, "err ", err.Error())
@@ -112,7 +112,7 @@ func (m *userModel) Find(id int) (*User, error) {
 func (m *userModel) Select() ([]*User, error) {
 	sqlStr := fmt.Sprintf("select * from %s", m.table)
 	var users []*User
-	if err := db.Get(&users, sqlStr); err != nil {
+	if err := db.Select(&users, sqlStr); err != nil {
 		slog.Error("select user err ", "sql", sqlStr, "err ", err.Error())
 		return nil, err
 	}

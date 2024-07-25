@@ -10,8 +10,9 @@ func registerNode(e *gin.Engine) {
 
 	node := e.Group("/api/node", middleware.Auth())
 
-	node.GET("/list", handler.ProjectHandler.List)
-	node.GET("/:id", handler.ProjectHandler.Info)
-	node.POST("", handler.ProjectHandler.Create)
-	node.POST("/:id", handler.ProjectHandler.Update)
+	node.POST("", handler.NodeHandler.Create)
+	node.DELETE("/:id", handler.NodeHandler.Delete)
+	node.POST("/:id", handler.NodeHandler.Update)
+	node.GET("/:id", handler.NodeHandler.Info)
+	node.GET("", handler.NodeHandler.List)
 }

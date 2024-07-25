@@ -12,7 +12,7 @@ func registerUser(e *gin.Engine) {
 	user := e.Group("/api/user").Use(middleware.Auth())
 	user.POST("/logout", handler.UserHandler.Logout) // 退出
 
-	user.GET("/list", handler.UserHandler.List)            // 用户信息
+	user.GET("", handler.UserHandler.List)                 // 用户信息
 	user.GET("/:id", handler.UserHandler.Info)             // 用户信息
 	user.POST("/", handler.UserHandler.Create)             // 添加用户
 	user.POST("/:id", handler.UserHandler.Update)          // 修改用户
