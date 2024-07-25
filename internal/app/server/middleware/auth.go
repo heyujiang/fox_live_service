@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 )
 
@@ -10,7 +9,6 @@ func Auth() gin.HandlerFunc {
 		// todo : 登录用户AUTH校验
 
 		c.Set("uid", 1)
-		fmt.Println(c.GetInt("uid"))
 		c.Set("username", "jiangyu")
 		c.Set("name", "江屿")
 		c.Next()

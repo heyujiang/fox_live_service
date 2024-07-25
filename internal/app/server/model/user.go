@@ -85,8 +85,8 @@ func (m *userModel) Delete(id int) error {
 
 // Update 更新数据
 func (m *userModel) Update(user *User) error {
-	sqlStr := fmt.Sprintf("update %s set `phone_number` = ? , `email` = ? , `name`= ? , `nick_name`= ? , `acatar`= ? , `update_id` = ? where `id` = %d", m.table, user.Id)
-	_, err := db.Exec(sqlStr, user.PhoneNumber, user.Email, user.Name, user.NickName, user.Avatar, user.UpdatedId)
+	sqlStr := fmt.Sprintf("update %s set `email` = ? , `nick_name`= ? , `avatar`= ? , `updated_id` = ? where `id` = %d", m.table, user.Id)
+	_, err := db.Exec(sqlStr, user.Email, user.NickName, user.Avatar, user.UpdatedId)
 	if err != nil {
 		slog.Error("update user err ", "sql", sqlStr, "err ", err.Error())
 		return err
@@ -99,10 +99,10 @@ func (m *userModel) Find(id int) (*User, error) {
 	sqlStr := fmt.Sprintf("select * from %s where `id` = ?", m.table)
 	user := new(User)
 	if err := db.Get(user, sqlStr, id); err != nil {
+		slog.Error("find user err ", "sql", sqlStr, "id", id, "err ", err.Error())
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotRecord
 		}
-		slog.Error("find user err ", "sql", sqlStr, "err ", err.Error())
 		return nil, err
 	}
 	return user, nil
@@ -124,10 +124,10 @@ func (m *userModel) FindByUsername(username string) (*User, error) {
 	sqlStr := fmt.Sprintf("select * from %s where `username` = ?", m.table)
 	user := new(User)
 	if err := db.Get(user, sqlStr, username); err != nil {
+		slog.Error("find user by username error", "sql", sqlStr, "username", username, "err ", err.Error())
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotRecord
 		}
-		slog.Error("find user by username error", "sql", sqlStr, "username", username, "err ", err.Error())
 		return nil, err
 	}
 	return user, nil
@@ -138,10 +138,10 @@ func (m *userModel) FindByPhoneNumber(phoneNumber string) (*User, error) {
 	sqlStr := fmt.Sprintf("select * from %s where `phone_number` = ?", m.table)
 	user := new(User)
 	if err := db.Get(user, sqlStr, phoneNumber); err != nil {
+		slog.Error("find user by phone number error", "sql", sqlStr, "phone_number", phoneNumber, "err ", err.Error())
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotRecord
 		}
-		slog.Error("find user by phone number error", "sql", sqlStr, "phone_number", phoneNumber, "err ", err.Error())
 		return nil, err
 	}
 	return user, nil
@@ -178,7 +178,7 @@ func (m *userModel) buildUserCond(cond *UserCond) (sqlCond string, args []interf
 		return
 	}
 
-	if cond.Id == 0 {
+	if cond.Id > 0 {
 		sqlCond += "and id = ?"
 		args = append(args, cond.Id)
 	}
@@ -193,9 +193,20 @@ func (m *userModel) buildUserCond(cond *UserCond) (sqlCond string, args []interf
 		args = append(args, cond.Name)
 	}
 
-	if cond.State > 0 {
+	if _, ok := UserStatusDesc[cond.State]; ok {
 		sqlCond += " and state = ?"
 		args = append(args, cond.State)
 	}
+
 	return
+}
+
+func (m *userModel) UpdateState(id, state, uid int) error {
+	sqlStr := fmt.Sprintf("update %s set `state` = ? , `updated_id` = ?  where `id` = %d", m.table, id)
+	_, err := db.Exec(sqlStr, state, uid)
+	if err != nil {
+		slog.Error("update user state err ", "sql", sqlStr, "id", id, "state", state, "err ", err.Error())
+		return err
+	}
+	return nil
 }

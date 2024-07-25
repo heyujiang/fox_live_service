@@ -18,9 +18,14 @@ type (
 	}
 
 	RespLogin struct {
-		Id       int    `json:"id"`
-		Username string `json:"username"`
-		Token    string `json:"token"`
+		Id          int    `json:"id"`
+		Username    string `json:"username"`
+		Name        string `json:"name"`
+		NickName    string `json:"nick_name"`
+		Avatar      string `json:"avatar"`
+		Email       string `json:"email"`
+		PhoneNumber string `json:"phone_number"`
+		Token       string `json:"token"`
 	}
 )
 
@@ -39,17 +44,27 @@ func (l loginLogic) Login(req *ReqLogin) (*RespLogin, error) {
 		slog.Error("login error")
 		return nil, err
 	}
+
 	//判断密码是否争正确
 	if user.Username != req.Username || user.Password != req.Password {
 		slog.Error("password error")
 		return nil, errorx.NewErrorX(errorx.ErrUserNotExist, "用户名不存在或密码错误")
 	}
 
+	if user.State != model.UserStatusEnable {
+		return nil, errorx.NewErrorX(errorx.ErrUserNotExist, "用户未启用，请联系管理员")
+	}
+
 	//生成TOKEN
 	token := "thisisusernamelogintoken"
 	return &RespLogin{
-		Id:       user.Id,
-		Username: user.Username,
-		Token:    token,
+		Id:          user.Id,
+		Username:    user.Username,
+		Name:        user.Name,
+		NickName:    user.NickName,
+		Avatar:      user.Avatar,
+		Email:       user.Email,
+		PhoneNumber: user.PhoneNumber,
+		Token:       token,
 	}, nil
 }
