@@ -22,7 +22,7 @@ func (h *projectPersonHandler) Create(c *gin.Context) {
 		return
 	}
 
-	res, err := project.PersonLogic.Create(&req)
+	res, err := project.PersonLogic.Create(&req, c.GetInt("uid"))
 	if err != nil {
 		common.ResponseErr(c, err)
 		return
@@ -40,50 +40,6 @@ func (h *projectPersonHandler) Delete(c *gin.Context) {
 	}
 
 	res, err := project.PersonLogic.Delete(&req)
-	if err != nil {
-		common.ResponseErr(c, err)
-		return
-	}
-
-	common.ResponseOK(c, res)
-	return
-}
-
-func (h *projectPersonHandler) Update(c *gin.Context) {
-	var reqUri project.ReqUriUpdateProjectPerson
-	if err := c.ShouldBindUri(&reqUri); err != nil {
-		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
-		return
-	}
-	var reqBody project.ReqBodyUpdateProjectPerson
-	if err := c.ShouldBindUri(&reqUri); err != nil {
-		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
-		return
-	}
-
-	req := project.ReqUpdateProjectPerson{
-		ReqUriUpdateProjectPerson:  reqUri,
-		ReqBodyUpdateProjectPerson: reqBody,
-	}
-
-	res, err := project.PersonLogic.Update(&req)
-	if err != nil {
-		common.ResponseErr(c, err)
-		return
-	}
-
-	common.ResponseOK(c, res)
-	return
-}
-
-func (h *projectPersonHandler) Info(c *gin.Context) {
-	var req project.ReqInfoProjectPerson
-	if err := c.ShouldBindUri(&req); err != nil {
-		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
-		return
-	}
-
-	res, err := project.PersonLogic.Info(&req)
 	if err != nil {
 		common.ResponseErr(c, err)
 		return

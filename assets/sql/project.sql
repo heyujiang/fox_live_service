@@ -49,6 +49,7 @@ create table project_person (
     project_id int unsigned not null default 0 comment '项目id',
     user_id int unsigned not null default 0 comment '用户id',
     name varchar(100) not null default 0 comment '用户',
+    phone_number varchar(11) not null default 0 comment '手机号',
     type tinyint unsigned not null default 0 comment '成员类型:1-第一负责人，2-第二负责人，3-普通成员',
     created_id int unsigned not null default 0 comment '',
     updated_id int unsigned not null default 0 comment '',
