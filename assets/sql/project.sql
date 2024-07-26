@@ -85,3 +85,17 @@ create table project_attached (
     updated_at timestamp not null default current_timestamp on update current_timestamp comment '更新时间',
     KEY  `idx_record_id` (`record_id`)
 ) engine = innodb comment '项目节点记录附件';
+
+
+-- auto-generated definition
+create table casbin_rule
+(
+    p_type varchar(100) null,
+    v0     varchar(100) null,
+    v1     varchar(100) null,
+    v2     varchar(100) null,
+    v3     varchar(100) null,
+    v4     varchar(100) null,
+    v5     varchar(100) null
+);
+
