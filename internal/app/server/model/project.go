@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/spf13/cast"
 	"golang.org/x/exp/slog"
 	"time"
 )
@@ -32,7 +33,8 @@ const (
 )
 
 const (
-	inertProjectStr = "`name`,`description`,`attr`,`state`,`type`,`node_id`,`node_name`,`schedule`,`created_at`,`updated_at`"
+	inertProjectStr = "`name`,`description`,`attr`,`state`,`type`,`node_id`,`node_name`,`schedule`,`capacity`,`properties`," +
+		"`area`,`address`,`connect`,`investment_agreement`,`business_condition`,`begin_time`,`created_id`,`updated_id`"
 )
 
 var (
@@ -64,19 +66,27 @@ var (
 
 type (
 	Project struct {
-		Id          int       `db:"id"`
-		Name        string    `db:"name"`
-		Description string    `db:"description"`
-		Attr        int       `db:"attr"`
-		State       int       `db:"state"`
-		Type        int       `db:"type"`
-		NodeId      int       `db:"node_id"`
-		NodeName    string    `db:"node_name"`
-		Schedule    string    `db:"schedule"`
-		CreatedId   int       `db:"created_id"`
-		UpdatedId   int       `db:"updated_id"`
-		CreatedAt   time.Time `db:"created_at"`
-		UpdatedAt   time.Time `db:"updated_at"`
+		Id                  int       `db:"id"`
+		Name                string    `db:"name"`
+		Description         string    `db:"description"`
+		Attr                int       `db:"attr"`
+		State               int       `db:"state"`
+		Type                int       `db:"type"`
+		NodeId              int       `db:"node_id"`
+		NodeName            string    `db:"node_name"`
+		Schedule            float64   `db:"schedule"`
+		Capacity            float64   `db:"capacity"`
+		Properties          string    `db:"properties"`
+		Area                float64   `db:"area"`
+		Address             string    `db:"address"`
+		Connect             string    `db:"connect"`
+		InvestmentAgreement string    `db:"investment_agreement"`
+		BusinessCondition   string    `db:"business_condition"`
+		BeginTime           time.Time `db:"begin_time"`
+		CreatedId           int       `db:"created_id"`
+		UpdatedId           int       `db:"updated_id"`
+		CreatedAt           time.Time `db:"created_at"`
+		UpdatedAt           time.Time `db:"updated_at"`
 	}
 
 	projectModel struct {
@@ -99,14 +109,17 @@ func newProjectModel() *projectModel {
 	}
 }
 
-func (m *projectModel) Create(project *Project) error {
-	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?,?,?,?)", m.table, inertProjectStr)
-	_, err := db.Exec(sqlStr, project.Name, project.Description, project.Attr, project.State, project.Type, project.NodeId, project.NodeName, project.Schedule, project.CreatedId, project.UpdatedId)
+func (m *projectModel) Create(project *Project) (int, error) {
+	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", m.table, inertProjectStr)
+	res, err := db.Exec(sqlStr, project.Name, project.Description, project.Attr, project.State, project.Type, project.NodeId,
+		project.NodeName, project.Schedule, project.Capacity, project.Properties, project.Area, project.Address, project.Connect,
+		project.InvestmentAgreement, project.BusinessCondition, project.BeginTime, project.CreatedId, project.UpdatedId)
 	if err != nil {
 		slog.Error("insert project err ", "sql", sqlStr, "err ", err.Error())
-		return err
+		return 0, err
 	}
-	return nil
+	projectId, _ := res.LastInsertId()
+	return cast.ToInt(projectId), nil
 }
 
 func (m *projectModel) Delete(id int) error {
@@ -150,10 +163,21 @@ func (m *projectModel) GetProjectByCond(cond *ProjectCond, pageIndex, pageSize i
 	sqlStr := fmt.Sprintf("select * from %s where 1 = 1 %s limit %d,%d", m.table, sqlCond, (pageIndex-1)*pageSize, pageSize)
 	var projects []*Project
 	if err := db.Select(&projects, sqlStr, args...); err != nil {
-		slog.Error("get users error ", "sql", sqlStr, "err ", err.Error())
+		slog.Error("get projects error ", "sql", sqlStr, "err ", err.Error())
 		return nil, err
 	}
 	return projects, nil
+}
+
+func (m *projectModel) GetProjectCountByCond(cond *ProjectCond) (int, error) {
+	sqlCond, args := m.buildProjectCond(cond)
+	sqlStr := fmt.Sprintf("select count(*) from %s where 1 = 1 %s", m.table, sqlCond)
+	var count int
+	if err := db.Get(&count, sqlStr, args...); err != nil {
+		slog.Error("get project count error ", "sql", sqlStr, "err ", err.Error())
+		return 0, err
+	}
+	return count, nil
 }
 
 func (m *projectModel) buildProjectCond(cond *ProjectCond) (sqlCond string, args []interface{}) {
@@ -178,7 +202,7 @@ func (m *projectModel) buildProjectCond(cond *ProjectCond) (sqlCond string, args
 
 	if _, ok := ProjectAttrDesc[cond.Attr]; ok {
 		sqlCond += " and attr = ?"
-		args = append(args, cond.State)
+		args = append(args, cond.Attr)
 	}
 
 	if _, ok := ProjectStateDesc[cond.State]; ok {
@@ -188,7 +212,7 @@ func (m *projectModel) buildProjectCond(cond *ProjectCond) (sqlCond string, args
 
 	if _, ok := ProjectTypeDesc[cond.Type]; ok {
 		sqlCond += " and type = ?"
-		args = append(args, cond.State)
+		args = append(args, cond.Type)
 	}
 
 	return

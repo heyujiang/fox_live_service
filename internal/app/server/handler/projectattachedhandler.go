@@ -1,6 +1,11 @@
 package handler
 
-import "github.com/gin-gonic/gin"
+import (
+	"fox_live_service/internal/app/server/logic/project"
+	"fox_live_service/pkg/common"
+	"fox_live_service/pkg/errorx"
+	"github.com/gin-gonic/gin"
+)
 
 var ProjectAttachedHandler = newProjectAttachedHandler()
 
@@ -10,11 +15,97 @@ func newProjectAttachedHandler() *projectAttachedHandler {
 	return &projectAttachedHandler{}
 }
 
-// List 项目节点记录附件列表
-func (p *projectAttachedHandler) List(c *gin.Context) {}
+func (h *projectAttachedHandler) Create(c *gin.Context) {
+	var req project.ReqCreateProjectAttached
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
 
-// Create 创建项目节点记录附件
-func (p *projectAttachedHandler) Create(c *gin.Context) {}
+	res, err := project.AttachedLogic.Create(&req)
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
 
-// Delete 删除项目节点记录附件
-func (p *projectAttachedHandler) Delete(c *gin.Context) {}
+	common.ResponseOK(c, res)
+	return
+}
+
+func (h *projectAttachedHandler) Delete(c *gin.Context) {
+	var req project.ReqDeleteProjectAttached
+	if err := c.ShouldBindUri(&req); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
+
+	res, err := project.AttachedLogic.Delete(&req)
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+
+	common.ResponseOK(c, res)
+	return
+}
+
+func (h *projectAttachedHandler) Update(c *gin.Context) {
+	var reqUri project.ReqUriUpdateProjectAttached
+	if err := c.ShouldBindUri(&reqUri); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
+	var reqBody project.ReqBodyUpdateProjectAttached
+	if err := c.ShouldBindUri(&reqUri); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
+
+	req := project.ReqUpdateProjectAttached{
+		ReqUriUpdateProjectAttached:  reqUri,
+		ReqBodyUpdateProjectAttached: reqBody,
+	}
+
+	res, err := project.AttachedLogic.Update(&req)
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+
+	common.ResponseOK(c, res)
+	return
+}
+
+func (h *projectAttachedHandler) Info(c *gin.Context) {
+	var req project.ReqInfoProjectAttached
+	if err := c.ShouldBindUri(&req); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
+
+	res, err := project.AttachedLogic.Info(&req)
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+
+	common.ResponseOK(c, res)
+	return
+}
+
+func (h *projectAttachedHandler) List(c *gin.Context) {
+	var req project.ReqProjectAttachedList
+	if err := c.ShouldBindUri(&req); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
+
+	res, err := project.AttachedLogic.List(&req)
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+
+	common.ResponseOK(c, res)
+	return
+}

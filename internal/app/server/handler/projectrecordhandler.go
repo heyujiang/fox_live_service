@@ -1,6 +1,11 @@
 package handler
 
-import "github.com/gin-gonic/gin"
+import (
+	"fox_live_service/internal/app/server/logic/project"
+	"fox_live_service/pkg/common"
+	"fox_live_service/pkg/errorx"
+	"github.com/gin-gonic/gin"
+)
 
 var ProjectRecordHandler = newProjectRecordHandler()
 
@@ -10,11 +15,97 @@ func newProjectRecordHandler() *projectRecordHandler {
 	return &projectRecordHandler{}
 }
 
-// List 项目节点记录列表
-func (p *projectRecordHandler) List(c *gin.Context) {}
+func (h *projectRecordHandler) Create(c *gin.Context) {
+	var req project.ReqCreateProjectRecord
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
 
-// Create 创建项目节点记录
-func (p *projectRecordHandler) Create(c *gin.Context) {}
+	res, err := project.RecordLogic.Create(&req)
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
 
-// Delete 删除项目节点记录
-func (p *projectRecordHandler) Delete(c *gin.Context) {}
+	common.ResponseOK(c, res)
+	return
+}
+
+func (h *projectRecordHandler) Delete(c *gin.Context) {
+	var req project.ReqDeleteProjectRecord
+	if err := c.ShouldBindUri(&req); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
+
+	res, err := project.RecordLogic.Delete(&req)
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+
+	common.ResponseOK(c, res)
+	return
+}
+
+func (h *projectRecordHandler) Update(c *gin.Context) {
+	var reqUri project.ReqUriUpdateProjectRecord
+	if err := c.ShouldBindUri(&reqUri); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
+	var reqBody project.ReqBodyUpdateProjectRecord
+	if err := c.ShouldBindUri(&reqUri); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
+
+	req := project.ReqUpdateProjectRecord{
+		ReqUriUpdateProjectRecord:  reqUri,
+		ReqBodyUpdateProjectRecord: reqBody,
+	}
+
+	res, err := project.RecordLogic.Update(&req)
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+
+	common.ResponseOK(c, res)
+	return
+}
+
+func (h *projectRecordHandler) Info(c *gin.Context) {
+	var req project.ReqInfoProjectRecord
+	if err := c.ShouldBindUri(&req); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
+
+	res, err := project.RecordLogic.Info(&req)
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+
+	common.ResponseOK(c, res)
+	return
+}
+
+func (h *projectRecordHandler) List(c *gin.Context) {
+	var req project.ReqProjectRecordList
+	if err := c.ShouldBindUri(&req); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
+
+	res, err := project.RecordLogic.List(&req)
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+
+	common.ResponseOK(c, res)
+	return
+}

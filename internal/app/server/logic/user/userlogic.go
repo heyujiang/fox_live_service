@@ -49,7 +49,7 @@ type (
 		Avatar      string `json:"avatar"`
 		State       int    `json:"state"`
 		CreatedAt   string `json:"create_at"`
-		UpdatedAT   string `json:"update_at"`
+		UpdatedAt   string `json:"update_at"`
 	}
 
 	ReqCreateUser struct {
@@ -93,7 +93,7 @@ type (
 		Avatar      string `json:"avatar"`
 		State       int    `json:"state"`
 		CreatedAt   string `json:"create_at"`
-		UpdatedAT   string `json:"update_at"`
+		UpdatedAt   string `json:"update_at"`
 	}
 
 	ReqEnableUser struct {
@@ -200,7 +200,7 @@ func (b *bisLogic) Info(req *ReqUserInfo) (*RespUserInfo, error) {
 		Avatar:      user.Avatar,
 		State:       user.State,
 		CreatedAt:   user.CreatedAt.Format(global.TimeFormat),
-		UpdatedAT:   user.UpdatedAt.Format(global.TimeFormat),
+		UpdatedAt:   user.UpdatedAt.Format(global.TimeFormat),
 	}, nil
 }
 
@@ -230,7 +230,7 @@ func (b *bisLogic) List(req *ReqUserList) (*RespUserList, error) {
 			Avatar:      user.Avatar,
 			State:       user.State,
 			CreatedAt:   user.CreatedAt.Format(global.TimeFormat),
-			UpdatedAT:   user.CreatedAt.Format(global.TimeFormat),
+			UpdatedAt:   user.CreatedAt.Format(global.TimeFormat),
 		})
 	}
 
