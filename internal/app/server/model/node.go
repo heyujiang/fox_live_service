@@ -135,6 +135,17 @@ func (m *nodeModel) Select() ([]*Node, error) {
 	return nodes, nil
 }
 
+// SelectNotLeaf 查询所有非叶子结点
+func (m *nodeModel) SelectNotLeaf() ([]*Node, error) {
+	sqlStr := fmt.Sprintf("select * from %s where is_leaf = ? order by sort asc ,id asc ", m.table)
+	var nodes []*Node
+	if err := db.Select(&nodes, sqlStr, NodeLeafNo); err != nil {
+		slog.Error("select leaf node err ", "sql", sqlStr, "err ", err.Error())
+		return nil, err
+	}
+	return nodes, nil
+}
+
 // SelectByPid 根据PID查询所有子节点
 func (m *nodeModel) SelectByPid(pid int) ([]*Node, error) {
 	sqlStr := fmt.Sprintf("select * from %s where `pid` = ? order by sort asc ,id asc", m.table)

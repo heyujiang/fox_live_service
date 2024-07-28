@@ -48,7 +48,7 @@ type (
 	UserCond struct {
 		Id          int
 		PhoneNumber string
-		Name        string
+		Username    string
 		State       int
 	}
 )
@@ -85,8 +85,8 @@ func (m *userModel) Delete(id int) error {
 
 // Update 更新数据
 func (m *userModel) Update(user *User) error {
-	sqlStr := fmt.Sprintf("update %s set `email` = ? , `nick_name`= ? , `avatar`= ? , `updated_id` = ? where `id` = %d", m.table, user.Id)
-	_, err := db.Exec(sqlStr, user.Email, user.NickName, user.Avatar, user.UpdatedId)
+	sqlStr := fmt.Sprintf("update %s set `email` = ? ,`name` = ?, `nick_name`= ? , `avatar`= ? , `updated_id` = ? where `id` = %d", m.table, user.Id)
+	_, err := db.Exec(sqlStr, user.Email, user.Name, user.NickName, user.Avatar, user.UpdatedId)
 	if err != nil {
 		slog.Error("update user err ", "sql", sqlStr, "err ", err.Error())
 		return err
@@ -188,9 +188,9 @@ func (m *userModel) buildUserCond(cond *UserCond) (sqlCond string, args []interf
 		args = append(args, cond.PhoneNumber)
 	}
 
-	if cond.Name != "" {
-		sqlCond += " and name = ?"
-		args = append(args, cond.Name)
+	if cond.Username != "" {
+		sqlCond += " and username = ?"
+		args = append(args, cond.Username)
 	}
 
 	if _, ok := UserStatusDesc[cond.State]; ok {

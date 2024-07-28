@@ -27,8 +27,8 @@ type (
 
 	ReqBodyUserList struct {
 		Id          int    `form:"id"`
-		PhoneNumber string `form:"phone_number"`
-		Name        string `form:"name"`
+		PhoneNumber string `form:"phoneNumber"`
+		Username    string `form:"username"`
 		State       int    `form:"state"`
 	}
 
@@ -42,21 +42,23 @@ type (
 	Item struct {
 		Id          int    `json:"id"`
 		Username    string `json:"username"`
-		PhoneNumber string `json:"phone_number"`
+		PhoneNumber string `json:"phoneNumber"`
 		Email       string `json:"email"`
 		Name        string `json:"name"`
-		NiceName    string `json:"nice_name"`
+		NickName    string `json:"nickName"`
 		Avatar      string `json:"avatar"`
 		State       int    `json:"state"`
-		CreatedAt   string `json:"create_at"`
-		UpdatedAt   string `json:"update_at"`
+		CreatedAt   string `json:"createdAt"`
+		UpdatedAt   string `json:"updatedAt"`
 	}
 
 	ReqCreateUser struct {
 		Username    string `json:"username"`
+		PhoneNumber string `json:"phoneNumber"`
+		Email       string `json:"email"`
 		Name        string `json:"name"`
-		PhoneNumber string `json:"phone_number"`
-		Password    string `json:"password"`
+		NickName    string `json:"nickName"`
+		Avatar      string `json:"avatar"`
 	}
 
 	RespCreateUser struct{}
@@ -72,7 +74,8 @@ type (
 
 	ReqBodyUpdateUser struct {
 		Email    string `json:"email"`
-		NickName string `json:"nick_name"`
+		Name     string `json:"name"`
+		NickName string `json:"nickName"`
 		Avatar   string `json:"avatar"`
 	}
 
@@ -86,14 +89,20 @@ type (
 	RespUserInfo struct {
 		Id          int    `json:"id"`
 		Username    string `json:"username"`
-		PhoneNumber string `json:"phone_number"`
+		PhoneNumber string `json:"phoneNumber"`
 		Email       string `json:"email"`
 		Name        string `json:"name"`
-		NiceName    string `json:"nice_name"`
+		NickName    string `json:"nickName"`
 		Avatar      string `json:"avatar"`
 		State       int    `json:"state"`
-		CreatedAt   string `json:"create_at"`
-		UpdatedAt   string `json:"update_at"`
+		CreatedAt   string `json:"createdAt"`
+		UpdatedAt   string `json:"updatedAt"`
+	}
+	ReqDeleteUser struct {
+		Id int `uri:"id"`
+	}
+
+	RespDeleteUser struct {
 	}
 
 	ReqEnableUser struct {
@@ -137,11 +146,12 @@ func (b *bisLogic) Create(req *ReqCreateUser, uid int) (*RespCreateUser, error) 
 
 	insertUser := model.User{
 		Username:    req.Username,
-		Password:    md5Password(req.Password),
+		Password:    md5Password("12345678"),
 		PhoneNumber: req.PhoneNumber,
-		Email:       "",
+		Email:       req.Email,
 		Name:        req.Name,
-		Avatar:      "",
+		NickName:    req.NickName,
+		Avatar:      req.Avatar,
 		State:       model.UserStatusEnable,
 		CreatedId:   uid,
 		UpdatedId:   uid,
@@ -167,6 +177,7 @@ func (b *bisLogic) Update(req *ReqUpdateUser, uid int) (*RespUpdateUser, error) 
 
 	if err := model.UserModel.Update(&model.User{
 		Id:        req.Id,
+		Name:      req.Name,
 		Email:     req.Email,
 		NickName:  req.NickName,
 		Avatar:    req.Avatar,
@@ -196,7 +207,7 @@ func (b *bisLogic) Info(req *ReqUserInfo) (*RespUserInfo, error) {
 		PhoneNumber: user.PhoneNumber,
 		Email:       user.Email,
 		Name:        user.Email,
-		NiceName:    user.NickName,
+		NickName:    user.NickName,
 		Avatar:      user.Avatar,
 		State:       user.State,
 		CreatedAt:   user.CreatedAt.Format(global.TimeFormat),
@@ -226,7 +237,7 @@ func (b *bisLogic) List(req *ReqUserList) (*RespUserList, error) {
 			PhoneNumber: user.PhoneNumber,
 			Email:       user.Email,
 			Name:        user.Name,
-			NiceName:    user.NickName,
+			NickName:    user.NickName,
 			Avatar:      user.Avatar,
 			State:       user.State,
 			CreatedAt:   user.CreatedAt.Format(global.TimeFormat),
@@ -252,8 +263,8 @@ func (b *bisLogic) buildSearchCond(req *ReqUserList) *model.UserCond {
 		cond.PhoneNumber = req.PhoneNumber
 	}
 
-	if req.Name != "" {
-		cond.Name = req.Name
+	if req.Username != "" {
+		cond.Username = req.Username
 	}
 
 	if _, ok := model.UserStatusDesc[req.State]; ok {
@@ -267,6 +278,24 @@ func md5Password(password string) string {
 	m := md5.New()
 	m.Write([]byte(password))
 	return fmt.Sprintf("%x", m.Sum(nil))
+}
+
+func (b *bisLogic) Delete(req *ReqDeleteUser, uid int) (*RespDeleteUser, error) {
+	_, err := model.UserModel.Find(req.Id)
+	if err != nil {
+		slog.Error("delete user get user error ", "id", req.Id, "err", err)
+		if errors.Is(err, model.ErrNotRecord) {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "用户不存在")
+		}
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询用户错误")
+	}
+
+	if err := model.UserModel.Delete(req.Id); err != nil {
+		slog.Error("delete user error ", "id", req.Id, "err", err)
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "删除用户错误")
+	}
+
+	return &RespDeleteUser{}, nil
 }
 
 func (b *bisLogic) Enable(req *ReqEnableUser, uid int) (*RespEnableUser, error) {

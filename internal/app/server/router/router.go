@@ -5,7 +5,6 @@ import (
 	"fox_live_service/config/global"
 	permissions "fox_live_service/internal/app/server/logic/permission"
 	"fox_live_service/internal/app/server/middleware"
-	sqlxadapter "github.com/memwey/casbin-sqlx-adapter"
 	"golang.org/x/exp/slog"
 	"io"
 	"log"
@@ -13,29 +12,25 @@ import (
 	"os"
 	"time"
 
+	gormadapter "github.com/casbin/gorm-adapter/v2"
 	"github.com/gin-gonic/gin"
 )
 
-//	gormadapter "github.com/casbin/gorm-adapter/v2"
-
 func init() {
-	//policyAdapter, err := gormadapter.NewAdapter(global.ConfigYml.GetString("Db.UseDbType"), global.ConfigYml.GetString("Db.Mysql.DataSourceName"), true)
-	//if err != nil {
-	//	log.Fatalf(err.Error())
-	//}
-	modelFilePath := "/home/autowise/work/go/fox_live_service/assets/casbin/model.conf"
-	//modelFilePath := global.Config.GetString("Casbin.ModelFile")
-
-	opts := &sqlxadapter.AdapterOptions{
-		DriverName:     "mysql",
-		DataSourceName: global.Config.GetString("Db.Mysql.DSN"),
-		TableName:      "casbin_rule",
+	policyAdapter, err := gormadapter.NewAdapter(
+		"mysql",
+		global.Config.GetString("Db.Mysql.DSN"),
+		true)
+	if err != nil {
+		log.Fatalf(err.Error())
 	}
-	a := sqlxadapter.NewAdapterFromOptions(opts)
+	//modelFilePath := "/home/autowise/work/go/fox_live_service/assets/casbin/model.conf"
+	modelFilePath := "/Users/fangyamin/go/src/github.com/fox_live_service/assets/casbin/model.conf"
+	//modelFilePath := global.Config.GetString("Casbin.ModelFile")
 
 	permission, err := permissions.NewPermissionLogic(func(c *gin.Context) string {
 		return c.GetString("username")
-	}, modelFilePath, a)
+	}, modelFilePath, policyAdapter)
 	slog.Info("permission init success", permission)
 	if err != nil {
 		log.Fatalf(err.Error())

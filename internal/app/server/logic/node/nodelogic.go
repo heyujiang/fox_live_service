@@ -17,23 +17,21 @@ func newBisLogic() *bisLogic {
 type (
 	bisLogic struct{}
 
-	RespNodeList struct {
-		List []*Item `json:"list"`
-	}
-
-	Item struct {
-		Id        int     `json:"id"`
-		Name      string  `json:"name"`
-		Pid       int     `json:"pid"`
-		IsLeaf    int     `json:"is_leaf"`
-		CreatedAt string  `json:"create_at"`
-		UpdatedAT string  `json:"update_at"`
-		Child     []*Item `json:"child"`
+	RespNodeItem struct {
+		Id        int             `json:"id"`
+		Name      string          `json:"name"`
+		Pid       int             `json:"pid"`
+		IsLeaf    int             `json:"isLeaf"`
+		Sort      int             `json:"sort"`
+		CreatedAt string          `json:"createdAt"`
+		UpdatedAT string          `json:"updatedAt"`
+		Children  []*RespNodeItem `json:"children"`
 	}
 
 	ReqCreateNode struct {
 		Name string `json:"name"`
 		Pid  int    `json:"pid"`
+		Sort int    `json:"sort"`
 	}
 
 	RespCreateNode struct{}
@@ -55,6 +53,7 @@ type (
 
 	ReqBodyUpdateNode struct {
 		Name string `json:"name"`
+		Sort int    `json:"sort"`
 	}
 
 	RespUpdateNode struct {
@@ -68,9 +67,18 @@ type (
 		Id        int    `json:"id"`
 		Name      string `json:"name"`
 		Pid       int    `json:"pid"`
-		IsLeaf    int    `json:"is_leaf"`
-		CreatedAt string `json:"create_at"`
-		UpdatedAT string `json:"update_at"`
+		IsLeaf    int    `json:"isLeaf"`
+		Sort      int    `json:"sort"`
+		CreatedAt string `json:"createAt"`
+		UpdatedAT string `json:"updateAt"`
+	}
+
+	RespParentNodeItem struct {
+		Id       int                   `json:"id"`
+		Name     string                `json:"name"`
+		Pid      int                   `json:"pid"`
+		Sort     int                   `json:"sort"`
+		Children []*RespParentNodeItem `json:"children"`
 	}
 )
 
@@ -93,6 +101,7 @@ func (b *bisLogic) Create(req *ReqCreateNode, uid int) (*RespCreateNode, error) 
 		Name:      req.Name,
 		Pid:       req.Pid,
 		IsLeaf:    isLeaf,
+		Sort:      req.Sort,
 		CreatedId: uid,
 		UpdatedId: uid,
 	}
@@ -137,6 +146,7 @@ func (b *bisLogic) Update(req *ReqUpdateNode, uid int) (*RespUpdateNode, error) 
 	if err := model.NodeModel.Update(&model.Node{
 		Id:        req.Id,
 		Name:      req.Name,
+		Sort:      req.Sort,
 		UpdatedId: uid,
 	}); err != nil {
 		slog.Error("update node error ", "id", req.Id, "err", err)
@@ -167,24 +177,25 @@ func (b *bisLogic) Info(req *ReqNodeInfo) (*RespNodeInfo, error) {
 	}, nil
 }
 
-func (b *bisLogic) List() (*RespNodeList, error) {
+func (b *bisLogic) List() ([]*RespNodeItem, error) {
 	nodes, err := model.NodeModel.Select()
 	if err != nil {
 		slog.Error("list node get node list error", "err", err.Error())
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取节点列表错误")
 	}
 
-	nodeIdMap := make(map[int][]*Item)
-	nodeIdMap[0] = make([]*Item, 0)
+	nodeIdMap := make(map[int][]*RespNodeItem)
+	nodeIdMap[0] = make([]*RespNodeItem, 0)
 	for _, node := range nodes {
 		if _, ok := nodeIdMap[node.Pid]; !ok {
-			nodeIdMap[node.Pid] = make([]*Item, 0)
+			nodeIdMap[node.Pid] = make([]*RespNodeItem, 0)
 		}
-		nodeIdMap[node.Pid] = append(nodeIdMap[node.Pid], &Item{
+		nodeIdMap[node.Pid] = append(nodeIdMap[node.Pid], &RespNodeItem{
 			Id:        node.Id,
 			Name:      node.Name,
 			Pid:       node.Pid,
 			IsLeaf:    node.IsLeaf,
+			Sort:      node.Sort,
 			CreatedAt: node.CreatedAt.Format(global.TimeFormat),
 			UpdatedAT: node.UpdatedAt.Format(global.TimeFormat),
 		})
@@ -192,14 +203,45 @@ func (b *bisLogic) List() (*RespNodeList, error) {
 	for _, nodeList := range nodeIdMap {
 		for _, node := range nodeList {
 			if _, ok := nodeIdMap[node.Id]; ok {
-				node.Child = nodeIdMap[node.Id]
+				node.Children = nodeIdMap[node.Id]
 			} else {
-				node.Child = make([]*Item, 0)
+				node.Children = make([]*RespNodeItem, 0)
 			}
 		}
 	}
 
-	return &RespNodeList{
-		List: nodeIdMap[0],
-	}, nil
+	return nodeIdMap[0], nil
+}
+
+func (b *bisLogic) Parent() ([]*RespParentNodeItem, error) {
+	nodes, err := model.NodeModel.SelectNotLeaf()
+	if err != nil {
+		slog.Error("parent node get node list error", "err", err.Error())
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取节点列表错误")
+	}
+
+	nodeIdMap := make(map[int][]*RespParentNodeItem)
+	nodeIdMap[0] = make([]*RespParentNodeItem, 0)
+	for _, node := range nodes {
+		if _, ok := nodeIdMap[node.Pid]; !ok {
+			nodeIdMap[node.Pid] = make([]*RespParentNodeItem, 0)
+		}
+		nodeIdMap[node.Pid] = append(nodeIdMap[node.Pid], &RespParentNodeItem{
+			Id:   node.Id,
+			Name: node.Name,
+			Pid:  node.Pid,
+			Sort: node.Sort,
+		})
+	}
+	for _, nodeList := range nodeIdMap {
+		for _, node := range nodeList {
+			if _, ok := nodeIdMap[node.Id]; ok {
+				node.Children = nodeIdMap[node.Id]
+			} else {
+				node.Children = make([]*RespParentNodeItem, 0)
+			}
+		}
+	}
+
+	return nodeIdMap[0], nil
 }

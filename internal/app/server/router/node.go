@@ -15,4 +15,5 @@ func registerNode(e *gin.Engine) {
 	node.POST("/:id", handler.NodeHandler.Update)
 	node.GET("/:id", handler.NodeHandler.Info)
 	node.GET("", handler.NodeHandler.List)
+	node.GET("/parent", handler.NodeHandler.Parent)
 }

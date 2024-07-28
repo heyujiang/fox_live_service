@@ -121,6 +121,23 @@ func (u *userHandler) Update(c *gin.Context) {
 	return
 }
 
+func (u *userHandler) Delete(c *gin.Context) {
+	var req user.ReqDeleteUser
+	if err := c.ShouldBindUri(&req); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
+
+	res, err := user.BisLogic.Delete(&req, c.GetInt("uid"))
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+
+	common.ResponseOK(c, res)
+	return
+}
+
 func (u *userHandler) Enable(c *gin.Context) {
 	var req user.ReqEnableUser
 	if err := c.ShouldBindUri(&req); err != nil {
@@ -151,6 +168,18 @@ func (u *userHandler) Disable(c *gin.Context) {
 		return
 	}
 
+	common.ResponseOK(c, res)
+	return
+}
+
+func (u *userHandler) Menus(c *gin.Context) {
+	res, _ := user.MenuLogic.GetMenus(c.GetInt("uid"))
+	common.ResponseOK(c, res)
+	return
+}
+
+func (u *userHandler) GetUserInfo(c *gin.Context) {
+	res, _ := user.AccountLogic.UserInfo(c.GetInt("uid"))
 	common.ResponseOK(c, res)
 	return
 }

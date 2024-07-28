@@ -103,3 +103,14 @@ func (n *nodeHandler) Delete(c *gin.Context) {
 	common.ResponseOK(c, res)
 	return
 }
+
+func (n *nodeHandler) Parent(c *gin.Context) {
+	res, err := node.BisLogic.Parent()
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+
+	common.ResponseOK(c, res)
+	return
+}
