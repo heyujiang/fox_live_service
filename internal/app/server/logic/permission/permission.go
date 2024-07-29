@@ -2,10 +2,33 @@ package permissions
 
 import (
 	"fmt"
+	"fox_live_service/config/global"
 	"github.com/casbin/casbin/v2"
+	gormadapter "github.com/casbin/gorm-adapter/v2"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/exp/slog"
+	"log"
 )
+
+var Permission *PermissionsLogic
+
+func init() {
+	policyAdapter, err := gormadapter.NewAdapter(
+		"mysql",
+		global.Config.GetString("Db.Mysql.DSN"),
+		true)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+
+	Permission, err = newPermissionLogic(func(c *gin.Context) string {
+		return c.GetString("username")
+	}, global.Config.GetString("Casbin.ModelFile"), policyAdapter)
+
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+}
 
 type Logic int
 
@@ -36,8 +59,8 @@ type (
 	SubFn func(c *gin.Context) string
 )
 
-func NewPermissionLogic(fn SubFn, modelFile string, policyAdapter interface{}) (*PermissionsLogic, error) {
-	e, err := NewCasbinEnforcer(modelFile, policyAdapter)
+func newPermissionLogic(fn SubFn, modelFile string, policyAdapter interface{}) (*PermissionsLogic, error) {
+	e, err := newCasbinEnforcer(modelFile, policyAdapter)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +78,7 @@ func NewPermissionLogic(fn SubFn, modelFile string, policyAdapter interface{}) (
 	}, nil
 }
 
-func NewCasbinEnforcer(modelFile string, policyAdapter interface{}) (*casbin.Enforcer, error) {
+func newCasbinEnforcer(modelFile string, policyAdapter interface{}) (*casbin.Enforcer, error) {
 	enforcer, err := casbin.NewEnforcer(modelFile, policyAdapter)
 	if err != nil {
 		return nil, fmt.Errorf("casbin enforce fail,err:%v", err)
