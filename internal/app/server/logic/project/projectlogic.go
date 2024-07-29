@@ -19,14 +19,15 @@ type (
 		Description         string  `json:"description"`
 		Attr                int     `json:"attr"`
 		Type                int     `json:"type"`
+		State               int     `json:"state"`
 		Capacity            float64 `json:"capacity"`
 		Properties          string  `json:"properties"`
 		Area                float64 `json:"area"`
 		Address             string  `json:"address"`
 		Connect             string  `json:"connect"`
-		InvestmentAgreement string  `json:"investment_agreement"`
-		BusinessCondition   string  `json:"business_condition"`
-		BeginTime           int64   `json:"begin_time"`
+		InvestmentAgreement string  `json:"investmentAgreement"`
+		BusinessCondition   string  `json:"businessCondition"`
+		BeginTime           int64   `json:"beginTime"`
 	}
 
 	RespCreateProject struct{}
@@ -57,9 +58,9 @@ type (
 		Area                float64 `json:"area"`
 		Address             string  `json:"address"`
 		Connect             string  `json:"connect"`
-		InvestmentAgreement string  `json:"investment_agreement"`
-		BusinessCondition   string  `json:"business_condition"`
-		BeginTime           int64   `json:"begin_time"`
+		InvestmentAgreement string  `json:"investmentAgreement"`
+		BusinessCondition   string  `json:"businessCondition"`
+		BeginTime           int64   `json:"beginTime"`
 	}
 
 	RespUpdateProject struct {
@@ -70,27 +71,27 @@ type (
 	}
 
 	RespInfoProject struct {
-		Id                  int     `json:"id"`
-		Name                string  `json:"name"`
-		Description         string  `json:"description"`
-		Attr                int     `json:"attr"`
-		State               int     `json:"state"`
-		Type                int     `json:"type"`
-		NodeId              int     `json:"node_id"`
-		NodeName            string  `json:"node_name"`
-		Schedule            float64 `json:"schedule"`
-		Capacity            float64 `json:"capacity"`
-		Properties          string  `json:"properties"`
-		Area                float64 `json:"area"`
-		Address             string  `json:"address"`
-		Connect             string  `json:"connect"`
-		InvestmentAgreement string  `json:"investment_agreement"`
-		BusinessCondition   string  `json:"business_condition"`
-		BeginTime           string  `json:"begin_time"`
-		CreatedId           int     `json:"created_id"`
-		UpdatedId           int     `json:"updated_id"`
-		CreatedAt           string  `json:"created_at"`
-		UpdatedAt           string  `json:"updated_at"`
+		Id                  int       `json:"id"`
+		Name                string    `json:"name"`
+		Description         string    `json:"description"`
+		Attr                int       `json:"attr"`
+		State               int       `json:"state"`
+		Type                int       `json:"type"`
+		NodeId              int       `json:"nodeId"`
+		NodeName            string    `json:"nodName"`
+		Schedule            float64   `json:"schedule"`
+		Capacity            float64   `json:"capacity"`
+		Properties          string    `json:"properties"`
+		Area                float64   `json:"area"`
+		Address             string    `json:"address"`
+		Connect             string    `json:"connect"`
+		InvestmentAgreement string    `json:"investmentAgreement"`
+		BusinessCondition   string    `json:"businessCondition"`
+		BeginTime           time.Time `json:"beginTime"`
+		CreatedId           int       `json:"createdId"`
+		UpdatedId           int       `json:"updatedId"`
+		CreatedAt           string    `json:"createdAt"`
+		UpdatedAt           string    `json:"updatedAt"`
 	}
 
 	ReqProjectList struct {
@@ -127,11 +128,11 @@ type (
 		Area                float64 `json:"area"`
 		Address             string  `json:"address"`
 		Connect             string  `json:"connect"`
-		InvestmentAgreement string  `json:"investment_agreement"`
-		BusinessCondition   string  `json:"business_condition"`
-		BeginTime           string  `json:"begin_time"`
-		CreatedAt           string  `json:"created_at"`
-		UpdatedAt           string  `json:"updated_at"`
+		InvestmentAgreement string  `json:"investmentAgreement"`
+		BusinessCondition   string  `json:"businessCondition"`
+		BeginTime           string  `json:"beginTime"`
+		CreatedAt           string  `json:"createdAt"`
+		UpdatedAt           string  `json:"updatedAt"`
 	}
 )
 
@@ -144,7 +145,7 @@ func (b *bisLogic) Create(req *ReqCreateProject, uid int) (*RespCreateProject, e
 		Name:                req.Name,
 		Description:         req.Description,
 		Attr:                req.Attr,
-		State:               model.ProjectStateWait,
+		State:               req.State,
 		Type:                req.Type,
 		Capacity:            req.Capacity,
 		Properties:          req.Properties,
@@ -220,7 +221,7 @@ func (b *bisLogic) Info(req *ReqInfoProject) (*RespInfoProject, error) {
 		Connect:             project.Connect,
 		InvestmentAgreement: project.InvestmentAgreement,
 		BusinessCondition:   project.BusinessCondition,
-		BeginTime:           project.BeginTime.Format(global.TimeFormat),
+		BeginTime:           project.BeginTime,
 		CreatedId:           project.CreatedId,
 		UpdatedId:           project.UpdatedId,
 		CreatedAt:           project.CreatedAt.Format(global.TimeFormat),

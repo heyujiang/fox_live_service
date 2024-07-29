@@ -109,18 +109,18 @@ func (m *menuLogic) GetMenus(uid int) ([]*RespMenuListItem, error) {
 			},
 			Component: "LAYOUT",
 			Path:      "/project",
-			Redirect:  "/project/list",
+			Redirect:  "/project/project",
 			Children: []*RespMenuListItem{
 				{
-					Name:      "list",
-					Component: "/project/list/index",
+					Name:      "project",
+					Component: "/project/project/index",
 					Meta: &MenuMeta{
 						Id:           671,
-						Locale:       "项目列表",
+						Locale:       "项目管理",
 						IgnoreCache:  true,
 						RequiresAuth: true,
 					},
-					Path: "list",
+					Path: "project",
 				},
 			},
 		},

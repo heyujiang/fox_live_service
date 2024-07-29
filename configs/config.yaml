@@ -17,4 +17,5 @@ Db:
 
 
 Casbin:
-  ModelFile: "/home/autowise/work/go/fox_live_service/assets/casbin/model.conf"
+#  ModelFile: "/home/autowise/work/go/fox_live_service/assets/casbin/model.conf"
+  ModelFile: "/Users/fangyamin/go/src/github.com/fox_live_service/assets/casbin/model.conf"
