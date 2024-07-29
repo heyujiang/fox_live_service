@@ -25,8 +25,8 @@ func init() {
 		log.Fatalf(err.Error())
 	}
 	//modelFilePath := "/home/autowise/work/go/fox_live_service/assets/casbin/model.conf"
-	modelFilePath := "/Users/fangyamin/go/src/github.com/fox_live_service/assets/casbin/model.conf"
-	//modelFilePath := global.Config.GetString("Casbin.ModelFile")
+	//modelFilePath := "/Users/fangyamin/go/src/github.com/fox_live_service/assets/casbin/model.conf"
+	modelFilePath := global.Config.GetString("Casbin.ModelFile")
 
 	permission, err := permissions.NewPermissionLogic(func(c *gin.Context) string {
 		return c.GetString("username")

@@ -9,7 +9,6 @@ require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/memwey/casbin-sqlx-adapter v0.3.0
 	github.com/spf13/cast v1.6.0
 	github.com/spf13/viper v1.18.2
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
