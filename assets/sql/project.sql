@@ -99,3 +99,15 @@ create table casbin_rule
     v5     varchar(100) null
 );
 
+-- 电话
+create table project_contact(
+    id int unsigned not null auto_increment primary key comment 'id',
+    project_id int unsigned not null default 0 comment '项目id',
+    name varchar(100) not null default 0 comment '姓名',
+    phone_number varchar(20) not null default 0 comment '电话',
+    type tinyint unsigned not null default 0 comment '联系人类型:1-第一负责人，2-第二负责人，3-普通成员',
+    description varchar(500) not null default '' comment '描述备注',
+    created_id int unsigned not null default 0 comment '',
+    created_at timestamp not null default current_timestamp comment '创建时间',
+    UNIQUE KEY `uk_project_id` (`project_id`)
+) engine = innodb comment '项目联系人';
