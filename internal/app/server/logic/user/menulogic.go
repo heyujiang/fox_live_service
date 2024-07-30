@@ -122,7 +122,6 @@ func (m *menuLogic) GetMenus(uid int) ([]*RespMenuListItem, error) {
 				},
 			},
 		},
-
 		{
 			Component: "/system/node/index",
 			Meta: &MenuMeta{
@@ -147,56 +146,54 @@ func (m *menuLogic) GetMenus(uid int) ([]*RespMenuListItem, error) {
 			Name: "account",
 			Path: "account",
 		},
-
 		{
-			Name: "user",
+			Name: "user_center",
 			Meta: &MenuMeta{
-				Id:          69,
+				Id:          73,
 				HideInMenu:  true,
-				Locale:      "用户管理",
+				Locale:      "个人中心",
 				IgnoreCache: true,
+				Icon:        "icon-user",
 			},
 			Component: "LAYOUT",
 			Path:      "/user",
-			Redirect:  "/user/info",
+			Redirect:  "/user",
 			Children: []*RespMenuListItem{
 				{
-					Name:      "info",
+					Name:      "user_info",
 					Component: "/user/info/index",
 					Meta: &MenuMeta{
-						Id:          670,
-						HideInMenu:  true,
-						Locale:      "用户信息",
-						IgnoreCache: true,
+						Id:           678,
+						Locale:       "我的项目",
+						IgnoreCache:  true,
+						RequiresAuth: true,
 					},
-					Path: "info",
+					Path: "user",
 				},
 				{
-					Name:      "setting",
+					Name:      "user_weekday",
+					Component: "/user/weekday/index",
+					Meta: &MenuMeta{
+						Id:           680,
+						Locale:       "周报日报",
+						IgnoreCache:  true,
+						RequiresAuth: true,
+					},
+					Path: "user",
+				},
+				{
+					Name:      "user_setting",
 					Component: "/user/setting/index",
 					Meta: &MenuMeta{
-						Id:          61,
-						HideInMenu:  true,
-						Locale:      "用户信息",
+						Id:          679,
+						Locale:      "个人设置",
 						IgnoreCache: true,
 					},
-					Path: "setting",
+					Path: "user",
 				},
 			},
 		},
 	}
 
-	//{
-	//	"component": "/dashboard/workplace/index",
-	//	"meta": {
-	//	"icon": "icon-dashboard",
-	//		"id": 8,
-	//		"ignoreCache": true,
-	//		"locale": "概况",
-	//		"requiresAuth": true
-	//},
-	//	"name": "home",
-	//	"path": "/home"
-	//}
 	return res, nil
 }
