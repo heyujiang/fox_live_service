@@ -31,10 +31,10 @@ var (
 type (
 	ProjectNode struct {
 		Id        int       `db:"id"`
-		ProjectId string    `db:"project_id"`
-		PNodeId   int       `json:"p_node_id"`
+		ProjectId int       `db:"project_id"`
+		PId       int       `db:"p_id"` // node pid
 		NodeId    int       `db:"node_id"`
-		NodeName  string    `db:"node_name"`
+		Name      string    `db:"name"` // 节点名称
 		IsLeaf    bool      `db:"is_leaf"`
 		Sort      int       `db:"sort"`
 		State     int       `db:"state"`
@@ -64,7 +64,7 @@ func newProjectNodeModel() *projectNodeModel {
 
 func (m *projectNodeModel) Create(projectNode *ProjectNode) error {
 	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?,?,?)", m.table, inertProjectNodeStr)
-	_, err := db.Exec(sqlStr, projectNode.ProjectId, projectNode.PNodeId, projectNode.NodeId, projectNode.NodeName, projectNode.IsLeaf, projectNode.Sort, projectNode.State, projectNode.CreatedId, projectNode.UpdatedId)
+	_, err := db.Exec(sqlStr, projectNode.ProjectId, projectNode.PId, projectNode.NodeId, projectNode.Name, projectNode.IsLeaf, projectNode.Sort, projectNode.State, projectNode.CreatedId, projectNode.UpdatedId)
 	if err != nil {
 		slog.Error("insert project Node err ", "sql", sqlStr, "err ", err.Error())
 		return err

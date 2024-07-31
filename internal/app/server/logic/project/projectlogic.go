@@ -3,6 +3,7 @@ package project
 import (
 	"fox_live_service/config/global"
 	"fox_live_service/internal/app/server/logic"
+	"fox_live_service/internal/app/server/logic/node"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
 	"golang.org/x/exp/slog"
@@ -30,8 +31,8 @@ type (
 		BusinessCondition   string                  `json:"businessCondition"`
 		BeginTime           int64                   `json:"beginTime"`
 		Contact             []*CreateProjectContact `json:"contact"`
-		Person              []*CreatePersonContact  `json:"person"`
-		NodeIds             []int64                 `json:"nodeIds"`
+		Person              []*CreateProjectPerson  `json:"person"`
+		NodeIds             []int                   `json:"nodeIds"`
 	}
 
 	CreateProjectContact struct {
@@ -41,9 +42,9 @@ type (
 		Description string `json:"description"`
 	}
 
-	CreatePersonContact struct {
-		UserId string `json:"userId"`
-		Type   int    `json:"type"`
+	CreateProjectPerson struct {
+		UserId int `json:"userId"`
+		Type   int `json:"type"`
 	}
 
 	RespCreateProject struct{}
@@ -157,7 +158,11 @@ func newBisLogic() *bisLogic {
 }
 
 func (b *bisLogic) Create(req *ReqCreateProject, uid int) (*RespCreateProject, error) {
-	_, err := model.ProjectModel.Create(&model.Project{
+	projectNodes, err := b.buildProjectNode(req.NodeIds, uid)
+	projectContacts, err := b.buildProjectContact(req.Contact, uid)
+	projectPersons, err := b.buildProjectPerson(req.Person, uid)
+
+	projectId, err := model.ProjectModel.Create(&model.Project{
 		Name:                req.Name,
 		Description:         req.Description,
 		Attr:                req.Attr,
@@ -168,6 +173,7 @@ func (b *bisLogic) Create(req *ReqCreateProject, uid int) (*RespCreateProject, e
 		Area:                req.Area,
 		Address:             req.Address,
 		Connect:             req.Connect,
+		Star:                req.Star,
 		InvestmentAgreement: req.InvestmentAgreement,
 		BusinessCondition:   req.BusinessCondition,
 		BeginTime:           time.Unix(req.BeginTime, 0),
@@ -175,10 +181,102 @@ func (b *bisLogic) Create(req *ReqCreateProject, uid int) (*RespCreateProject, e
 		UpdatedId:           uid,
 	})
 
+	for i, _ := range projectNodes {
+		projectNodes[i].ProjectId = projectId
+	}
+
+	for i, _ := range projectPersons {
+		projectPersons[i].ProjectId = projectId
+	}
+
+	for i, _ := range projectContacts {
+		projectContacts[i].ProjectId = projectId
+	}
+
+	// todo
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "创建项目失败")
 	}
 	return &RespCreateProject{}, nil
+}
+
+func (b *bisLogic) buildProjectNode(finishedNodeIds []int, uid int) ([]*model.ProjectNode, error) {
+	finishedNIdMap := make(map[int]struct{}, len(finishedNodeIds))
+	for _, v := range finishedNodeIds {
+		finishedNIdMap[v] = struct{}{}
+	}
+
+	nodes, err := node.BisLogic.Options()
+	if err != nil {
+		return nil, err
+	}
+	projectNodes := make([]*model.ProjectNode, 0)
+	for _, pNode := range nodes {
+		for _, nameItem := range pNode.Children {
+			state := model.ProjectNodeStateWaitBegin
+			if _, ok := finishedNIdMap[nameItem.Id]; ok {
+				state = model.ProjectNodeStateFinished
+			}
+			projectNodes = append(projectNodes, &model.ProjectNode{
+				PId:       pNode.Id,
+				NodeId:    nameItem.Id,
+				Name:      nameItem.Name,
+				IsLeaf:    false,
+				State:     state,
+				CreatedId: uid,
+				UpdatedId: uid,
+			})
+		}
+	}
+	return projectNodes, nil
+}
+
+func (b *bisLogic) buildProjectPerson(persons []*CreateProjectPerson, uid int) ([]*model.ProjectPerson, error) {
+	projectPersons := make([]*model.ProjectPerson, 0)
+
+	ids := make([]int, 0)
+	for _, person := range persons {
+		ids = append(ids, person.UserId)
+	}
+
+	users, err := model.UserModel.SelectByIds(ids)
+	if err != nil {
+		return nil, err
+	}
+
+	userInfoMap := make(map[int]*model.User, len(users))
+	for _, user := range users {
+		userInfoMap[user.Id] = user
+	}
+
+	for _, person := range persons {
+		projectPersons = append(projectPersons, &model.ProjectPerson{
+			UserId:      person.UserId,
+			Type:        person.Type,
+			Name:        userInfoMap[person.UserId].Name,
+			PhoneNumber: userInfoMap[person.UserId].PhoneNumber,
+			CreatedId:   uid,
+			UpdatedId:   uid,
+		})
+	}
+
+	return projectPersons, nil
+}
+
+func (b *bisLogic) buildProjectContact(contacts []*CreateProjectContact, uid int) ([]*model.ProjectContact, error) {
+	projectContacts := make([]*model.ProjectContact, 0)
+
+	for _, contact := range contacts {
+		projectContacts = append(projectContacts, &model.ProjectContact{
+			Type:        contact.Type,
+			Name:        contact.Name,
+			PhoneNumber: contact.PhoneNumber,
+			Description: contact.Description,
+			CreatedId:   uid,
+		})
+	}
+
+	return projectContacts, nil
 }
 
 func (b *bisLogic) Delete(req *ReqDeleteProject) (*RespDeleteProject, error) {

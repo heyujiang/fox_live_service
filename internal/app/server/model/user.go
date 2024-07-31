@@ -216,9 +216,16 @@ func (m *userModel) SelectByEnable() ([]*User, error) {
 	sqlStr := fmt.Sprintf("select * from %s where `state` = ? limit 1", m.table)
 	if err := db.Select(&users, sqlStr, UserStatusEnable); err != nil {
 		slog.Error("find user options error", "sql", sqlStr, "err ", err.Error())
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrNotRecord
-		}
+		return nil, err
+	}
+	return users, nil
+}
+
+func (m *userModel) SelectByIds(ids []int) ([]*User, error) {
+	var users []*User
+	sqlStr := fmt.Sprintf("select * from %s where `state` = ? and id in ? limit 1", m.table)
+	if err := db.Select(&users, sqlStr, UserStatusEnable, ids); err != nil {
+		slog.Error("batch select user bu uids error", "sql", sqlStr, "ids", ids, "err ", err.Error())
 		return nil, err
 	}
 	return users, nil

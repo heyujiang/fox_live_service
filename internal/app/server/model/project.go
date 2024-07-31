@@ -80,6 +80,7 @@ type (
 		Area                float64   `db:"area"`
 		Address             string    `db:"address"`
 		Connect             string    `db:"connect"`
+		Star                int       `db:"star"`
 		InvestmentAgreement string    `db:"investment_agreement"`
 		BusinessCondition   string    `db:"business_condition"`
 		BeginTime           time.Time `db:"begin_time"`
