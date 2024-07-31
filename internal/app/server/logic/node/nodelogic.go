@@ -80,6 +80,13 @@ type (
 		Sort     int                   `json:"sort"`
 		Children []*RespParentNodeItem `json:"children"`
 	}
+
+	RespOptionItem struct {
+		Id   int    `json:"value"`
+		Name string `json:"label"`
+		//Disabled bool              `json:"disabled"`
+		Children []*RespOptionItem `json:"children,omitempty"`
+	}
 )
 
 // Create 创建节点
@@ -239,6 +246,40 @@ func (b *bisLogic) Parent() ([]*RespParentNodeItem, error) {
 				node.Children = nodeIdMap[node.Id]
 			} else {
 				node.Children = make([]*RespParentNodeItem, 0)
+			}
+		}
+	}
+
+	return nodeIdMap[0], nil
+}
+
+func (b *bisLogic) Options() ([]*RespOptionItem, error) {
+	nodes, err := model.NodeModel.Select()
+	if err != nil {
+		slog.Error("list node get node list error", "err", err.Error())
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取节点列表错误")
+	}
+
+	nodeIdMap := make(map[int][]*RespOptionItem)
+	nodeIdMap[0] = make([]*RespOptionItem, 0)
+	for _, node := range nodes {
+		if _, ok := nodeIdMap[node.Pid]; !ok {
+			nodeIdMap[node.Pid] = make([]*RespOptionItem, 0)
+		}
+		//var disabled bool
+		//if node.IsLeaf == model.NodeLeafNo {
+		//	disabled = true
+		//}
+		nodeIdMap[node.Pid] = append(nodeIdMap[node.Pid], &RespOptionItem{
+			Id:   node.Id,
+			Name: node.Name,
+			//Disabled: disabled,
+		})
+	}
+	for _, nodeList := range nodeIdMap {
+		for _, node := range nodeList {
+			if _, ok := nodeIdMap[node.Id]; ok {
+				node.Children = nodeIdMap[node.Id]
 			}
 		}
 	}

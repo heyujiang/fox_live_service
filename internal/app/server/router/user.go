@@ -19,6 +19,7 @@ func registerUser(e *gin.Engine) {
 	user.POST("/enable/:id", handler.UserHandler.Enable)   // 启用用户
 	user.POST("/disable/:id", handler.UserHandler.Disable) // 禁用用户
 	user.DELETE("/:id", handler.UserHandler.Delete)        // 删除用户
+	user.GET("/options", handler.UserHandler.Options)      // 删除用户
 
 	user.GET("/menus", handler.UserHandler.Menus)
 	user.GET("/getUserInfo", handler.UserHandler.GetUserInfo)

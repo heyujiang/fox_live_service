@@ -183,3 +183,9 @@ func (u *userHandler) GetUserInfo(c *gin.Context) {
 	common.ResponseOK(c, res)
 	return
 }
+
+func (u *userHandler) Options(c *gin.Context) {
+	res, _ := user.BisLogic.Options()
+	common.ResponseOK(c, res)
+	return
+}

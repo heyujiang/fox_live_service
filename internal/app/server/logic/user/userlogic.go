@@ -118,6 +118,11 @@ type (
 
 	RespDisableUser struct {
 	}
+
+	RespOptionItem struct {
+		Id       int    `json:"value"`
+		Username string `json:"label"`
+	}
 )
 
 // Create 创建用户
@@ -332,4 +337,22 @@ func (b *bisLogic) Disable(req *ReqDisableUser, uid int) (*RespDisableUser, erro
 	}
 
 	return &RespDisableUser{}, nil
+}
+
+func (b *bisLogic) Options() ([]*RespOptionItem, error) {
+	users, err := model.UserModel.SelectByEnable()
+	if err != nil {
+		slog.Error("get user options error ", "err", err)
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询用户选项列表错误")
+	}
+
+	res := make([]*RespOptionItem, 0, len(users))
+	for _, v := range users {
+		res = append(res, &RespOptionItem{
+			Id:       v.Id,
+			Username: v.Username,
+		})
+	}
+
+	return res, nil
 }

@@ -15,19 +15,35 @@ type (
 	bisLogic struct{}
 
 	ReqCreateProject struct {
-		Name                string  `json:"name"`
-		Description         string  `json:"description"`
-		Attr                int     `json:"attr"`
-		Type                int     `json:"type"`
-		State               int     `json:"state"`
-		Capacity            float64 `json:"capacity"`
-		Properties          string  `json:"properties"`
-		Area                float64 `json:"area"`
-		Address             string  `json:"address"`
-		Connect             string  `json:"connect"`
-		InvestmentAgreement string  `json:"investmentAgreement"`
-		BusinessCondition   string  `json:"businessCondition"`
-		BeginTime           int64   `json:"beginTime"`
+		Name                string                  `json:"name"`
+		Description         string                  `json:"description"`
+		Attr                int                     `json:"attr"`
+		Type                int                     `json:"type"`
+		State               int                     `json:"state"`
+		Capacity            float64                 `json:"capacity"`
+		Properties          string                  `json:"properties"`
+		Area                float64                 `json:"area"`
+		Star                int                     `json:"star"`
+		Address             string                  `json:"address"`
+		Connect             string                  `json:"connect"`
+		InvestmentAgreement string                  `json:"investmentAgreement"`
+		BusinessCondition   string                  `json:"businessCondition"`
+		BeginTime           int64                   `json:"beginTime"`
+		Contact             []*CreateProjectContact `json:"contact"`
+		Person              []*CreatePersonContact  `json:"person"`
+		NodeIds             []int64                 `json:"nodeIds"`
+	}
+
+	CreateProjectContact struct {
+		Name        string `json:"name"`
+		PhoneNumber string `json:"phoneNumber"`
+		Type        int    `json:"type"`
+		Description string `json:"description"`
+	}
+
+	CreatePersonContact struct {
+		UserId string `json:"userId"`
+		Type   int    `json:"type"`
 	}
 
 	RespCreateProject struct{}

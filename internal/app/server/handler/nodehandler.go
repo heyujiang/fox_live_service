@@ -114,3 +114,14 @@ func (n *nodeHandler) Parent(c *gin.Context) {
 	common.ResponseOK(c, res)
 	return
 }
+
+func (n *nodeHandler) Options(c *gin.Context) {
+	res, err := node.BisLogic.Options()
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+
+	common.ResponseOK(c, res)
+	return
+}
