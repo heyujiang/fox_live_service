@@ -27,6 +27,7 @@ type (
 		Order              int      `json:"order,omitempty"`        //order?: number; // Sort routing menu items. If set key, the higher the value, the more forward it is
 		NoAffix            bool     `json:"noAffix,omitempty"`      //noAffix?: boolean; // if set true, the tag will not affix in the tab-bar
 		IgnoreCache        bool     `json:"ignoreCache,omitempty"`  //ignoreCache?: boolean; // if set true, the page will not be cached
+		Title              string   `json:"title,omitempty"`
 	}
 )
 
@@ -46,7 +47,7 @@ func (m *menuLogic) GetMenus(uid int) ([]*RespMenuListItem, error) {
 				IgnoreCache:  true,
 			},
 			Component: "/dashboard/workplace/index",
-			Path:      "workplace",
+			Path:      "/workplace",
 		},
 		{
 			Name: "project",
@@ -82,6 +83,18 @@ func (m *menuLogic) GetMenus(uid int) ([]*RespMenuListItem, error) {
 						RequiresAuth: true,
 					},
 					Path: "addproject",
+				},
+				{
+					Name:      "detail",
+					Component: "/project/detail/index",
+					Meta: &MenuMeta{
+						Id:           677,
+						Locale:       "项目详情",
+						IgnoreCache:  true,
+						RequiresAuth: true,
+						HideInMenu:   true,
+					},
+					Path: "detail",
 				},
 			},
 		},
@@ -157,7 +170,7 @@ func (m *menuLogic) GetMenus(uid int) ([]*RespMenuListItem, error) {
 			},
 			Component: "LAYOUT",
 			Path:      "/user",
-			Redirect:  "/user",
+			Redirect:  "/user/user",
 			Children: []*RespMenuListItem{
 				{
 					Name:      "user_info",
@@ -179,7 +192,7 @@ func (m *menuLogic) GetMenus(uid int) ([]*RespMenuListItem, error) {
 						IgnoreCache:  true,
 						RequiresAuth: true,
 					},
-					Path: "user",
+					Path: "weekday",
 				},
 				{
 					Name:      "user_setting",
@@ -189,7 +202,7 @@ func (m *menuLogic) GetMenus(uid int) ([]*RespMenuListItem, error) {
 						Locale:      "个人设置",
 						IgnoreCache: true,
 					},
-					Path: "user",
+					Path: "setting",
 				},
 			},
 		},
