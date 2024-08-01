@@ -5,11 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/exp/slog"
+	"strings"
 	"time"
 )
 
 const (
-	inertProjectContactStr = "`project_id`,`name`,`phone_number`,`type`,`description`,`created_id`,`updated_id`"
+	insertProjectContactStr = "`project_id`,`name`,`phone_number`,`type`,`description`,`created_id`"
 )
 
 const (
@@ -41,12 +42,12 @@ type (
 
 func newProjectContactModel() *projectContactModel {
 	return &projectContactModel{
-		table: "project_Contact",
+		table: "project_contact",
 	}
 }
 
 func (m *projectContactModel) Create(projectContact *ProjectContact) error {
-	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?)", m.table, inertProjectContactStr)
+	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?)", m.table, insertProjectContactStr)
 	_, err := db.Exec(sqlStr, projectContact.ProjectId, projectContact.Name, projectContact.PhoneNumber, projectContact.Type, projectContact.Description, projectContact.CreatedId)
 	if err != nil {
 		slog.Error("insert project contact err ", "sql", sqlStr, "err ", err.Error())
@@ -86,4 +87,21 @@ func (m *projectContactModel) SelectByProjectId(projectId int) ([]*ProjectContac
 		return nil, err
 	}
 	return projectContacts, nil
+}
+
+func (m *projectContactModel) BatchInsert(projectContacts []*ProjectContact) error {
+	if len(projectContacts) == 0 {
+		return nil
+	}
+	ph := strings.TrimRight(strings.Repeat("(?,?,?,?,?,?),", len(projectContacts)), ",")
+	var args []interface{}
+	for _, projectContact := range projectContacts {
+		args = append(args, projectContact.ProjectId, projectContact.Name, projectContact.PhoneNumber, projectContact.Type, projectContact.Description, projectContact.CreatedId)
+	}
+	querySql := `insert into ` + m.table + `(` + insertProjectContactStr + `) values ` + ph
+	_, err := db.Exec(querySql, args...)
+	if err != nil {
+		slog.Error("batch insert project contact error", "err", err, "sql", querySql, "args", args)
+	}
+	return err
 }

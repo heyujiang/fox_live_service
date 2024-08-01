@@ -5,11 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/exp/slog"
+	"strings"
 	"time"
 )
 
 const (
-	inertProjectPersonStr = "`project_id`,`user_id`,`name`,`phone_number`,`type`,`created_id`,`updated_id`"
+	insertProjectPersonStr = "`project_id`,`user_id`,`type`,`name`,`phone_number`,`created_id`"
 )
 
 const (
@@ -31,9 +32,7 @@ type (
 		Name        string    `db:"name"`
 		PhoneNumber string    `db:"phone_number"`
 		CreatedId   int       `db:"created_id"`
-		UpdatedId   int       `db:"updated_id"`
 		CreatedAt   time.Time `db:"created_at"`
-		UpdatedAt   time.Time `db:"updated_at"`
 	}
 
 	projectPersonModel struct {
@@ -48,8 +47,8 @@ func newProjectPersonModel() *projectPersonModel {
 }
 
 func (m *projectPersonModel) Create(projectPerson *ProjectPerson) error {
-	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?)", m.table, inertProjectPersonStr)
-	_, err := db.Exec(sqlStr, projectPerson.ProjectId, projectPerson.UserId, projectPerson.Name, projectPerson.PhoneNumber, projectPerson.Type, projectPerson.CreatedId, projectPerson.UpdatedId)
+	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?)", m.table, insertProjectPersonStr)
+	_, err := db.Exec(sqlStr, projectPerson.ProjectId, projectPerson.UserId, projectPerson.Type, projectPerson.Name, projectPerson.PhoneNumber, projectPerson.CreatedId)
 	if err != nil {
 		slog.Error("insert project person err ", "sql", sqlStr, "err ", err.Error())
 		return err
@@ -98,4 +97,21 @@ func (m *projectPersonModel) SelectByUserId(userId int) ([]*ProjectPerson, error
 		return nil, err
 	}
 	return projectPersons, nil
+}
+
+func (m *projectPersonModel) BatchInsert(projectPersons []*ProjectPerson) error {
+	if len(projectPersons) == 0 {
+		return nil
+	}
+	ph := strings.TrimRight(strings.Repeat("(?,?,?,?,?,?),", len(projectPersons)), ",")
+	var args []interface{}
+	for _, projectPerson := range projectPersons {
+		args = append(args, projectPerson.ProjectId, projectPerson.UserId, projectPerson.Type, projectPerson.Name, projectPerson.PhoneNumber, projectPerson.CreatedId)
+	}
+	querySql := `insert into ` + m.table + `(` + insertProjectPersonStr + `) values ` + ph
+	_, err := db.Exec(querySql, args...)
+	if err != nil {
+		slog.Error("batch insert project person error", "err", err)
+	}
+	return err
 }

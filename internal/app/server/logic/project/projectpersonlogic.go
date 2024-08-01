@@ -101,7 +101,6 @@ func (b *personLogic) Create(req *ReqCreateProjectPerson, uid int) (*RespCreateP
 		PhoneNumber: user.PhoneNumber,
 		Type:        req.Type,
 		CreatedId:   uid,
-		UpdatedId:   uid,
 	}); err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "创建项目成员失败")
 	}

@@ -5,11 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/exp/slog"
+	"strings"
 	"time"
 )
 
 const (
-	inertProjectNodeStr = "`project_id`,`p_node_id`,`node_id`,`node_name`,`is_leaf`,`sort`,`state`,`created_at`,`updated_at`"
+	insertProjectNodeStr = "`project_id`,`p_id`,`node_id`,`name`,`is_leaf`,`sort`,`state`,`created_id`,`updated_id`"
 )
 
 const (
@@ -58,12 +59,12 @@ type (
 
 func newProjectNodeModel() *projectNodeModel {
 	return &projectNodeModel{
-		table: "project_Node",
+		table: "project_node",
 	}
 }
 
 func (m *projectNodeModel) Create(projectNode *ProjectNode) error {
-	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?,?,?)", m.table, inertProjectNodeStr)
+	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?,?,?)", m.table, insertProjectNodeStr)
 	_, err := db.Exec(sqlStr, projectNode.ProjectId, projectNode.PId, projectNode.NodeId, projectNode.Name, projectNode.IsLeaf, projectNode.Sort, projectNode.State, projectNode.CreatedId, projectNode.UpdatedId)
 	if err != nil {
 		slog.Error("insert project Node err ", "sql", sqlStr, "err ", err.Error())
@@ -93,4 +94,21 @@ func (m *projectNodeModel) UpdateProjectNodeState(id int, state, uid int) error 
 		return err
 	}
 	return nil
+}
+
+func (m *projectNodeModel) BatchInsert(projectNodes []*ProjectNode) error {
+	if len(projectNodes) == 0 {
+		return nil
+	}
+	ph := strings.TrimRight(strings.Repeat("(?,?,?,?,?,?,?,?,?),", len(projectNodes)), ",")
+	var args []interface{}
+	for _, projectNode := range projectNodes {
+		args = append(args, projectNode.ProjectId, projectNode.PId, projectNode.NodeId, projectNode.Name, projectNode.IsLeaf, projectNode.Sort, projectNode.State, projectNode.CreatedId, projectNode.UpdatedId)
+	}
+	querySql := `insert into ` + m.table + `(` + insertProjectNodeStr + `) values ` + ph
+	_, err := db.Exec(querySql, args...)
+	if err != nil {
+		slog.Error("batch insert project node error", "err", err)
+	}
+	return err
 }

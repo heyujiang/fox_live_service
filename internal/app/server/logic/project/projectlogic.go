@@ -193,7 +193,18 @@ func (b *bisLogic) Create(req *ReqCreateProject, uid int) (*RespCreateProject, e
 		projectContacts[i].ProjectId = projectId
 	}
 
-	// todo
+	if err := model.ProjectContactModel.BatchInsert(projectContacts); err != nil {
+		return nil, err
+	}
+
+	if err := model.ProjectPersonModel.BatchInsert(projectPersons); err != nil {
+		return nil, err
+	}
+
+	if err := model.ProjectNodeModel.BatchInsert(projectNodes); err != nil {
+		return nil, err
+	}
+
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "创建项目失败")
 	}
@@ -256,7 +267,6 @@ func (b *bisLogic) buildProjectPerson(persons []*CreateProjectPerson, uid int) (
 			Name:        userInfoMap[person.UserId].Name,
 			PhoneNumber: userInfoMap[person.UserId].PhoneNumber,
 			CreatedId:   uid,
-			UpdatedId:   uid,
 		})
 	}
 

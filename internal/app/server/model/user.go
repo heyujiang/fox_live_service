@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 	"golang.org/x/exp/slog"
 	"time"
 )
@@ -223,8 +224,14 @@ func (m *userModel) SelectByEnable() ([]*User, error) {
 
 func (m *userModel) SelectByIds(ids []int) ([]*User, error) {
 	var users []*User
-	sqlStr := fmt.Sprintf("select * from %s where `state` = ? and id in ? limit 1", m.table)
-	if err := db.Select(&users, sqlStr, UserStatusEnable, ids); err != nil {
+	sqlStr := fmt.Sprintf("select * from %s where `state` = ? and id in (?) ", m.table)
+	query1, args, err := sqlx.In(sqlStr, UserStatusEnable, ids)
+	if err != nil {
+		slog.Error("batch select user bu uids error", "sql", sqlStr, "ids", ids, "err ", err.Error())
+		return nil, err
+	}
+	slog.Info(query1, "args", args)
+	if err := db.Select(&users, query1, args...); err != nil {
 		slog.Error("batch select user bu uids error", "sql", sqlStr, "ids", ids, "err ", err.Error())
 		return nil, err
 	}
