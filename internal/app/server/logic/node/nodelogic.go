@@ -92,6 +92,23 @@ type (
 		Id   int    `json:"value"`
 		Name string `json:"label"`
 	}
+
+	Item struct {
+		Id        int    `json:"id"`
+		Name      string `json:"name"`
+		Pid       int    `json:"pid"`
+		IsLeaf    int    `json:"isLeaf"`
+		Sort      int    `json:"sort"`
+		CreatedId int    `json:"createdId"`
+		UpdatedId int    `json:"updatedId"`
+		CreatedAt string `json:"createdAt"`
+		UpdatedAt string `json:"updatedAt"`
+	}
+
+	TreeItem struct {
+		*Item
+		Children []*TreeItem `json:"children"`
+	}
 )
 
 // Create 创建节点
@@ -190,39 +207,40 @@ func (b *bisLogic) Info(req *ReqNodeInfo) (*RespNodeInfo, error) {
 }
 
 func (b *bisLogic) List() ([]*RespNodeItem, error) {
-	nodes, err := model.NodeModel.Select()
+	nodes, err := b.GetAllTreeNodes()
 	if err != nil {
-		slog.Error("list node get node list error", "err", err.Error())
-		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取节点列表错误")
+		slog.Error("list node error ", "err", err)
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询节点数据错误")
 	}
 
-	nodeIdMap := make(map[int][]*RespNodeItem)
-	nodeIdMap[0] = make([]*RespNodeItem, 0)
+	res := make([]*RespNodeItem, 0)
+
 	for _, node := range nodes {
-		if _, ok := nodeIdMap[node.Pid]; !ok {
-			nodeIdMap[node.Pid] = make([]*RespNodeItem, 0)
+		children := make([]*RespNodeItem, 0, len(node.Children))
+		for _, child := range node.Children {
+			children = append(children, &RespNodeItem{
+				Id:        child.Id,
+				Name:      child.Name,
+				Pid:       child.Pid,
+				IsLeaf:    child.IsLeaf,
+				Sort:      child.Sort,
+				CreatedAt: child.CreatedAt,
+				UpdatedAT: child.UpdatedAt,
+				Children:  make([]*RespNodeItem, 0),
+			})
 		}
-		nodeIdMap[node.Pid] = append(nodeIdMap[node.Pid], &RespNodeItem{
+		res = append(res, &RespNodeItem{
 			Id:        node.Id,
 			Name:      node.Name,
 			Pid:       node.Pid,
 			IsLeaf:    node.IsLeaf,
 			Sort:      node.Sort,
-			CreatedAt: node.CreatedAt.Format(global.TimeFormat),
-			UpdatedAT: node.UpdatedAt.Format(global.TimeFormat),
+			CreatedAt: node.CreatedAt,
+			UpdatedAT: node.UpdatedAt,
+			Children:  children,
 		})
 	}
-	for _, nodeList := range nodeIdMap {
-		for _, node := range nodeList {
-			if _, ok := nodeIdMap[node.Id]; ok {
-				node.Children = nodeIdMap[node.Id]
-			} else {
-				node.Children = make([]*RespNodeItem, 0)
-			}
-		}
-	}
-
-	return nodeIdMap[0], nil
+	return res, nil
 }
 
 func (b *bisLogic) Parent() ([]*RespParentNodeOptionItem, error) {
@@ -256,14 +274,10 @@ func (b *bisLogic) Options() ([]*RespOptionItem, error) {
 		if _, ok := nodeIdMap[node.Pid]; !ok {
 			nodeIdMap[node.Pid] = make([]*RespOptionItem, 0)
 		}
-		//var disabled bool
-		//if node.IsLeaf == model.NodeLeafNo {
-		//	disabled = true
-		//}
+
 		nodeIdMap[node.Pid] = append(nodeIdMap[node.Pid], &RespOptionItem{
 			Id:   node.Id,
 			Name: node.Name,
-			//Disabled: disabled,
 		})
 	}
 	for _, nodeList := range nodeIdMap {
@@ -275,4 +289,59 @@ func (b *bisLogic) Options() ([]*RespOptionItem, error) {
 	}
 
 	return nodeIdMap[0], nil
+}
+
+// GetAllNodes 获取所有节点数据
+func (b *bisLogic) GetAllNodes() ([]*Item, error) {
+	nodes, err := model.NodeModel.Select()
+	if err != nil {
+		slog.Error("list node get node list error", "err", err.Error())
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询节点数据错误")
+	}
+
+	nodeItems := make([]*Item, 0, len(nodes))
+	for _, node := range nodes {
+		nodeItems = append(nodeItems, &Item{
+			Id:        node.Id,
+			Name:      node.Name,
+			Pid:       node.Pid,
+			IsLeaf:    node.IsLeaf,
+			Sort:      node.Sort,
+			CreatedId: node.CreatedId,
+			UpdatedId: node.UpdatedId,
+			CreatedAt: node.CreatedAt.Format(global.TimeFormat),
+			UpdatedAt: node.UpdatedAt.Format(global.TimeFormat),
+		})
+	}
+
+	return nodeItems, nil
+}
+
+func (b *bisLogic) GetAllTreeNodes() ([]*TreeItem, error) {
+	nodes, err := b.GetAllNodes()
+	if err != nil {
+		slog.Error("list node error ", "err", err)
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询节点数据错误")
+	}
+
+	nodePIdMap := make(map[int][]*TreeItem)
+	for _, node := range nodes {
+		if _, ok := nodePIdMap[node.Pid]; !ok {
+			nodePIdMap[node.Pid] = make([]*TreeItem, 0)
+		}
+		nodePIdMap[node.Pid] = append(nodePIdMap[node.Pid], &TreeItem{
+			Item:     node,
+			Children: make([]*TreeItem, 0),
+		})
+	}
+
+	for _, nodeList := range nodePIdMap {
+		for _, node := range nodeList {
+			if _, ok := nodePIdMap[node.Id]; ok {
+				node.Children = nodePIdMap[node.Id]
+			}
+		}
+	}
+
+	return nodePIdMap[0], nil
 }

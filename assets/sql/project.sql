@@ -20,6 +20,8 @@ create table project (
     address varchar(255) not null default '' comment '项目地址',
     connect varchar(255) not null default '' comment '电网接入情况',
     star tinyint unsigned not null default 0 comment '星级',
+    user_id int unsigned not null default 0 comment '第一负责人id',
+    username varchar(100)  not null default '' comment '第一负责人',
     investment_agreement varchar(255) not null default '' comment '投资协议',
     business_condition varchar(255) not null default '' comment '商务条件',
     begin_time timestamp null comment '开始时间',

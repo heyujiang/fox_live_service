@@ -34,7 +34,7 @@ const (
 
 const (
 	inertProjectStr = "`name`,`description`,`attr`,`state`,`type`,`node_id`,`node_name`,`schedule`,`capacity`,`properties`," +
-		"`area`,`address`,`connect`,`investment_agreement`,`business_condition`,`begin_time`,`created_id`,`updated_id`"
+		"`area`,`address`,`connect`,`investment_agreement`,`business_condition`,`star`,`user_id`,`username`,`begin_time`,`created_id`,`updated_id`"
 )
 
 var (
@@ -81,6 +81,8 @@ type (
 		Address             string    `db:"address"`
 		Connect             string    `db:"connect"`
 		Star                int       `db:"star"`
+		UserId              int       `db:"user_id"`
+		Username            string    `db:"username"`
 		InvestmentAgreement string    `db:"investment_agreement"`
 		BusinessCondition   string    `db:"business_condition"`
 		BeginTime           time.Time `db:"begin_time"`
@@ -95,12 +97,9 @@ type (
 	}
 
 	ProjectCond struct {
-		Id     int
-		Name   string
-		NodeId int
-		Attr   int
-		State  int
-		Type   int
+		Name      string
+		UserId    int
+		CreatedAt []time.Time
 	}
 )
 
@@ -111,10 +110,11 @@ func newProjectModel() *projectModel {
 }
 
 func (m *projectModel) Create(project *Project) (int, error) {
-	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", m.table, inertProjectStr)
+	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", m.table, inertProjectStr)
 	res, err := db.Exec(sqlStr, project.Name, project.Description, project.Attr, project.State, project.Type, project.NodeId,
 		project.NodeName, project.Schedule, project.Capacity, project.Properties, project.Area, project.Address, project.Connect,
-		project.InvestmentAgreement, project.BusinessCondition, project.BeginTime, project.CreatedId, project.UpdatedId)
+		project.InvestmentAgreement, project.BusinessCondition, project.Star, project.UserId, project.Username, project.BeginTime,
+		project.CreatedId, project.UpdatedId)
 	if err != nil {
 		slog.Error("insert project err ", "sql", sqlStr, "err ", err.Error())
 		return 0, err
@@ -161,7 +161,7 @@ func (m *projectModel) GetProjectByCond(cond *ProjectCond, pageIndex, pageSize i
 		pageIndex = 1
 	}
 	sqlCond, args := m.buildProjectCond(cond)
-	sqlStr := fmt.Sprintf("select * from %s where 1 = 1 %s limit %d,%d", m.table, sqlCond, (pageIndex-1)*pageSize, pageSize)
+	sqlStr := fmt.Sprintf("select * from %s where 1 = 1 %s order by created_at desc limit %d,%d", m.table, sqlCond, (pageIndex-1)*pageSize, pageSize)
 	var projects []*Project
 	if err := db.Select(&projects, sqlStr, args...); err != nil {
 		slog.Error("get projects error ", "sql", sqlStr, "err ", err.Error())
@@ -172,7 +172,7 @@ func (m *projectModel) GetProjectByCond(cond *ProjectCond, pageIndex, pageSize i
 
 func (m *projectModel) GetProjectCountByCond(cond *ProjectCond) (int, error) {
 	sqlCond, args := m.buildProjectCond(cond)
-	sqlStr := fmt.Sprintf("select count(*) from %s where 1 = 1 %s", m.table, sqlCond)
+	sqlStr := fmt.Sprintf("select count(*) from %s where 1 = 1 %s order by created_at desc", m.table, sqlCond)
 	var count int
 	if err := db.Get(&count, sqlStr, args...); err != nil {
 		slog.Error("get project count error ", "sql", sqlStr, "err ", err.Error())
@@ -186,9 +186,9 @@ func (m *projectModel) buildProjectCond(cond *ProjectCond) (sqlCond string, args
 		return
 	}
 
-	if cond.Id > 0 {
-		sqlCond += "and id = ?"
-		args = append(args, cond.Id)
+	if cond.UserId > 0 {
+		sqlCond += "and user_id = ?"
+		args = append(args, cond.UserId)
 	}
 
 	if cond.Name != "" {
@@ -196,24 +196,9 @@ func (m *projectModel) buildProjectCond(cond *ProjectCond) (sqlCond string, args
 		args = append(args, cond.Name)
 	}
 
-	if cond.NodeId > 0 {
-		sqlCond += " and node_id = ?"
-		args = append(args, cond.Name)
-	}
-
-	if _, ok := ProjectAttrDesc[cond.Attr]; ok {
-		sqlCond += " and attr = ?"
-		args = append(args, cond.Attr)
-	}
-
-	if _, ok := ProjectStateDesc[cond.State]; ok {
-		sqlCond += " and state = ?"
-		args = append(args, cond.State)
-	}
-
-	if _, ok := ProjectTypeDesc[cond.Type]; ok {
-		sqlCond += " and type = ?"
-		args = append(args, cond.Type)
+	if len(cond.CreatedAt) == 2 {
+		sqlCond += " and created_at >= ? and created_at <= ?"
+		args = append(args, cond.CreatedAt[0], cond.CreatedAt[1])
 	}
 
 	return

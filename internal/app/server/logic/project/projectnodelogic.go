@@ -1,5 +1,10 @@
 package project
 
+import (
+	"errors"
+	"fox_live_service/internal/app/server/model"
+)
+
 var NodeLogic = newNodeLogic()
 
 type (
@@ -46,6 +51,16 @@ type (
 
 	ListProjectNodeItem struct {
 	}
+
+	NodeItem struct {
+		Id     int    `json:"id"`
+		NodeId int    `json:"node_id"`
+		Name   string `json:"name"`
+		Pid    int    `json:"pid"`
+		State  int    `json:"state"`
+		Sort   int    `json:"sort"`
+		IsLeaf int    `json:"is_leaf"`
+	}
 )
 
 func newNodeLogic() *nodeLogic {
@@ -71,4 +86,25 @@ func (b *nodeLogic) Info(req *ReqInfoProjectNode) (*RespInfoProjectNode, error) 
 
 func (b *nodeLogic) List(req *ReqProjectNodeList) (*RespProjectNodeList, error) {
 	return &RespProjectNodeList{}, nil
+}
+
+func (n *nodeLogic) GetAllProjectNode(projectId int) ([]*NodeItem, error) {
+	projectNodes, err := model.ProjectNodeModel.SelectByProjectId(projectId)
+	if err != nil {
+		return nil, errors.New("查询节点所有节点错误")
+	}
+
+	res := make([]*NodeItem, 0, len(projectNodes))
+	for _, v := range projectNodes {
+		res = append(res, &NodeItem{
+			Id:     v.Id,
+			NodeId: v.NodeId,
+			Name:   v.Name,
+			Pid:    v.PId,
+			State:  v.State,
+			Sort:   v.Sort,
+			IsLeaf: v.IsLeaf,
+		})
+	}
+	return res, nil
 }

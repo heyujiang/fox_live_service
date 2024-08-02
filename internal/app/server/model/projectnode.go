@@ -15,8 +15,8 @@ const (
 
 const (
 	ProjectNodeStateWaitBegin = iota + 1 // 未开始
-	ProjectNodeStateInProcess            // 未开始
-	ProjectNodeStateFinished             // 未开始
+	ProjectNodeStateInProcess            // 进行中
+	ProjectNodeStateFinished             // 已完成
 )
 
 var (
@@ -24,8 +24,8 @@ var (
 
 	ProjectNodeStateDesc = map[int]string{
 		ProjectNodeStateWaitBegin: "未开始",
-		ProjectNodeStateInProcess: "未开始",
-		ProjectNodeStateFinished:  "未开始",
+		ProjectNodeStateInProcess: "进行中",
+		ProjectNodeStateFinished:  "已完成",
 	}
 )
 
@@ -36,7 +36,7 @@ type (
 		PId       int       `db:"p_id"` // node pid
 		NodeId    int       `db:"node_id"`
 		Name      string    `db:"name"` // 节点名称
-		IsLeaf    bool      `db:"is_leaf"`
+		IsLeaf    int       `db:"is_leaf"`
 		Sort      int       `db:"sort"`
 		State     int       `db:"state"`
 		CreatedId int       `db:"created_id"`
@@ -111,4 +111,14 @@ func (m *projectNodeModel) BatchInsert(projectNodes []*ProjectNode) error {
 		slog.Error("batch insert project node error", "err", err)
 	}
 	return err
+}
+
+func (m *projectNodeModel) SelectByProjectId(projectId int) ([]*ProjectNode, error) {
+	sqlStr := fmt.Sprintf("select * from %s where `project_id` = ? order by sort asc", m.table)
+	projectNodes := make([]*ProjectNode, 0)
+	if err := db.Select(&projectNodes, sqlStr, projectId); err != nil {
+		slog.Error("select project node by project id err ", "sql", sqlStr, "project_id", projectId, "err ", err.Error())
+		return nil, err
+	}
+	return projectNodes, nil
 }
