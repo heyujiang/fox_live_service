@@ -1,6 +1,7 @@
 package project
 
 import (
+	"errors"
 	"fmt"
 	"fox_live_service/config/global"
 	"fox_live_service/internal/app/server/logic"
@@ -49,7 +50,23 @@ type (
 		Type   int `json:"type"`
 	}
 
-	RespCreateProject struct{}
+	RespCreateProject struct {
+		Id                  int     `json:"id"`
+		Name                string  `json:"name"`
+		Description         string  `json:"description"`
+		Attr                int     `json:"attr"`
+		Type                int     `json:"type"`
+		State               int     `json:"state"`
+		Capacity            float64 `json:"capacity"`
+		Properties          string  `json:"properties"`
+		Area                float64 `json:"area"`
+		Star                int     `json:"star"`
+		Address             string  `json:"address"`
+		Connect             string  `json:"connect"`
+		InvestmentAgreement string  `json:"investmentAgreement"`
+		BusinessCondition   string  `json:"businessCondition"`
+		BeginTime           string  `json:"beginTime"`
+	}
 
 	ReqDeleteProject struct {
 		Id int `uri:"id"`
@@ -195,7 +212,7 @@ func (b *bisLogic) Create(req *ReqCreateProject, uid int) (*RespCreateProject, e
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "创建项目失败")
 	}
 
-	projectId, err := model.ProjectModel.Create(&model.Project{
+	projectIns := &model.Project{
 		Name:                req.Name,
 		Description:         req.Description,
 		Attr:                req.Attr,
@@ -217,7 +234,8 @@ func (b *bisLogic) Create(req *ReqCreateProject, uid int) (*RespCreateProject, e
 		BeginTime:           time.Unix(req.BeginTime, 0),
 		CreatedId:           uid,
 		UpdatedId:           uid,
-	})
+	}
+	projectId, err := model.ProjectModel.Create(projectIns)
 
 	for i, _ := range projectNodes {
 		projectNodes[i].ProjectId = projectId
@@ -246,7 +264,23 @@ func (b *bisLogic) Create(req *ReqCreateProject, uid int) (*RespCreateProject, e
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "创建项目失败")
 	}
-	return &RespCreateProject{}, nil
+	return &RespCreateProject{
+		Id:                  projectId,
+		Name:                projectIns.Name,
+		Description:         projectIns.Description,
+		Attr:                projectIns.Attr,
+		Type:                projectIns.Type,
+		State:               projectIns.State,
+		Capacity:            projectIns.Capacity,
+		Properties:          projectIns.Properties,
+		Area:                projectIns.Area,
+		Star:                projectIns.Star,
+		Address:             projectIns.Address,
+		Connect:             projectIns.Connect,
+		InvestmentAgreement: projectIns.InvestmentAgreement,
+		BusinessCondition:   projectIns.BusinessCondition,
+		BeginTime:           projectIns.BeginTime.Format(global.DateFormat),
+	}, nil
 }
 
 func (b *bisLogic) buildProjectNode(finishedNodeIds []int, uid int) ([]*model.ProjectNode, int, string, float64, error) {
@@ -404,6 +438,9 @@ func (b *bisLogic) Update(req *ReqUpdateProject, uid int) (*RespUpdateProject, e
 func (b *bisLogic) Info(req *ReqInfoProject) (*RespInfoProject, error) {
 	project, err := model.ProjectModel.Find(req.Id)
 	if err != nil {
+		if errors.Is(err, model.ErrNotRecord) {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目不存在")
+		}
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目信息错误")
 	}
 
