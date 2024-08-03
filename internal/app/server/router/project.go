@@ -16,7 +16,7 @@ func registerProject(e *gin.Engine) {
 	project.GET("/:id", handler.ProjectHandler.Info)
 	project.GET("", handler.ProjectHandler.List)
 
-	project.GET("/nodes", handler.ProjectNodeHandler.List)
+	project.GET("/nodes/:id", handler.ProjectNodeHandler.List)
 
 	project.GET("/record", handler.ProjectRecordHandler.List)
 	project.POST("/record", handler.ProjectRecordHandler.Create)
