@@ -3,6 +3,8 @@ package project
 import (
 	"errors"
 	"fox_live_service/internal/app/server/model"
+	"fox_live_service/pkg/errorx"
+	"golang.org/x/exp/slog"
 )
 
 var NodeLogic = newNodeLogic()
@@ -43,13 +45,20 @@ type (
 	}
 
 	ReqProjectNodeList struct {
+		ProjectId int `uri:"id"`
 	}
 
-	RespProjectNodeList struct {
-		List []*ListProjectNodeItem
-	}
-
-	ListProjectNodeItem struct {
+	RespProjectNodeItem struct {
+		Id            int                    `json:"id"`
+		NodeId        int                    `json:"nodeId"`
+		Name          string                 `json:"name"`
+		Pid           int                    `json:"pid"`
+		State         int                    `json:"state"`
+		Sort          int                    `json:"sort"`
+		IsLeaf        int                    `json:"isLeaf"`
+		RecordTotal   int                    `json:"recordTotal"`
+		AttachedTotal int                    `json:"attachedTotal"`
+		Children      []*RespProjectNodeItem `json:"children"`
 	}
 
 	NodeItem struct {
@@ -61,31 +70,96 @@ type (
 		Sort   int    `json:"sort"`
 		IsLeaf int    `json:"is_leaf"`
 	}
+
+	TreeNodeItem struct {
+		*NodeItem
+		Children []*TreeNodeItem `json:"children"`
+	}
 )
 
 func newNodeLogic() *nodeLogic {
 	return &nodeLogic{}
 }
 
-func (b *nodeLogic) Create(req *ReqCreateProjectNode) (*RespCreateProjectNode, error) {
+func (n *nodeLogic) Create(req *ReqCreateProjectNode) (*RespCreateProjectNode, error) {
 
 	return &RespCreateProjectNode{}, nil
 }
 
-func (b *nodeLogic) Delete(req *ReqDeleteProjectNode) (*RespDeleteProjectNode, error) {
+func (n *nodeLogic) Delete(req *ReqDeleteProjectNode) (*RespDeleteProjectNode, error) {
 	return &RespDeleteProjectNode{}, nil
 }
 
-func (b *nodeLogic) Update(req *ReqUpdateProjectNode) (*RespUpdateProjectNode, error) {
+func (n *nodeLogic) Update(req *ReqUpdateProjectNode) (*RespUpdateProjectNode, error) {
 	return &RespUpdateProjectNode{}, nil
 }
 
-func (b *nodeLogic) Info(req *ReqInfoProjectNode) (*RespInfoProjectNode, error) {
+func (n *nodeLogic) Info(req *ReqInfoProjectNode) (*RespInfoProjectNode, error) {
 	return &RespInfoProjectNode{}, nil
 }
 
-func (b *nodeLogic) List(req *ReqProjectNodeList) (*RespProjectNodeList, error) {
-	return &RespProjectNodeList{}, nil
+func (n *nodeLogic) List(req *ReqProjectNodeList) ([]*RespProjectNodeItem, error) {
+	if req.ProjectId == 0 {
+		return []*RespProjectNodeItem{}, nil
+	}
+	nodes, err := n.GetAllTreeNodes(req.ProjectId)
+	if err != nil {
+		slog.Error("list node error ", "err", err)
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询节点数据错误")
+	}
+
+	records, err := model.ProjectRecordModel.GetAllByProjectId(req.ProjectId)
+	if err != nil {
+		slog.Error("list node error ", "err", err)
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询节点数据错误")
+	}
+	recordCountMap := make(map[int]int)
+	for _, v := range records {
+		recordCountMap[v.NodeId]++
+	}
+
+	attacheds, err := model.ProjectAttachedModel.GetAllByProjectId(req.ProjectId)
+	if err != nil {
+		slog.Error("list node error ", "err", err)
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询节点数据错误")
+	}
+	attachedCountMap := make(map[int]int)
+	for _, v := range attacheds {
+		attachedCountMap[v.NodeId]++
+	}
+
+	res := make([]*RespProjectNodeItem, 0)
+
+	for _, node := range nodes {
+		children := make([]*RespProjectNodeItem, 0, len(node.Children))
+		for _, child := range node.Children {
+			children = append(children, &RespProjectNodeItem{
+				Id:            child.Id,
+				NodeId:        child.NodeId,
+				Name:          child.Name,
+				Pid:           child.Pid,
+				State:         child.State,
+				IsLeaf:        child.IsLeaf,
+				Sort:          child.Sort,
+				RecordTotal:   recordCountMap[child.NodeId],
+				AttachedTotal: attachedCountMap[child.NodeId],
+				Children:      make([]*RespProjectNodeItem, 0),
+			})
+		}
+		res = append(res, &RespProjectNodeItem{
+			Id:            node.Id,
+			NodeId:        node.NodeId,
+			Name:          node.Name,
+			Pid:           node.Pid,
+			State:         node.State,
+			IsLeaf:        node.IsLeaf,
+			Sort:          node.Sort,
+			RecordTotal:   recordCountMap[node.NodeId],
+			AttachedTotal: attachedCountMap[node.NodeId],
+			Children:      children,
+		})
+	}
+	return res, nil
 }
 
 func (n *nodeLogic) GetAllProjectNode(projectId int) ([]*NodeItem, error) {
@@ -107,4 +181,33 @@ func (n *nodeLogic) GetAllProjectNode(projectId int) ([]*NodeItem, error) {
 		})
 	}
 	return res, nil
+}
+
+func (n *nodeLogic) GetAllTreeNodes(projectId int) ([]*TreeNodeItem, error) {
+	nodes, err := n.GetAllProjectNode(projectId)
+	if err != nil {
+		slog.Error("list project node error ", "err", err)
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目节点数据错误")
+	}
+
+	nodePIdMap := make(map[int][]*TreeNodeItem)
+	for _, node := range nodes {
+		if _, ok := nodePIdMap[node.Pid]; !ok {
+			nodePIdMap[node.Pid] = make([]*TreeNodeItem, 0)
+		}
+		nodePIdMap[node.Pid] = append(nodePIdMap[node.Pid], &TreeNodeItem{
+			NodeItem: node,
+			Children: make([]*TreeNodeItem, 0),
+		})
+	}
+
+	for _, nodeList := range nodePIdMap {
+		for _, node := range nodeList {
+			if _, ok := nodePIdMap[node.NodeId]; ok {
+				node.Children = nodePIdMap[node.NodeId]
+			}
+		}
+	}
+
+	return nodePIdMap[0], nil
 }

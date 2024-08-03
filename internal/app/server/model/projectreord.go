@@ -127,3 +127,13 @@ func (m *projectRecordModel) buildProjectRecordCond(cond *ProjectRecordCond) (sq
 	}
 	return
 }
+
+func (m *projectRecordModel) GetAllByProjectId(projectId int) ([]*ProjectRecord, error) {
+	sqlStr := fmt.Sprintf("select * from %s where project_id = ?", m.table)
+	var projectRecords []*ProjectRecord
+	if err := db.Select(&projectRecords, sqlStr, projectId); err != nil {
+		slog.Error("get project record error ", "sql", sqlStr, "project_id", projectId, "err ", err.Error())
+		return nil, err
+	}
+	return projectRecords, nil
+}

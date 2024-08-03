@@ -77,16 +77,17 @@ create table project_record (
 
 create table project_attached (
     id int unsigned not null auto_increment primary key comment 'id',
+    project_id int unsigned not null default 0 comment '项目id',
+    node_id int unsigned not null default 0 comment '节点id',
     record_id int unsigned not null default 0 comment '节点记录id',
     user_id int unsigned not null default 0 comment '用户id',
     file_url varchar(255) not null default '' comment '附件地址',
     file_name varchar(255) not null default '' comment '附件名称',
     file_ext varchar(20) not null default  '' comment '附件格式',
     created_id int unsigned not null default 0 comment '',
-    updated_id int unsigned not null default 0 comment '',
     created_at timestamp not null default current_timestamp comment '创建时间',
-    updated_at timestamp not null default current_timestamp on update current_timestamp comment '更新时间',
-    KEY  `idx_record_id` (`record_id`)
+    KEY  `idx_record_id` (`record_id`),
+    KEY `idx_project_id` (`project_id`)
 ) engine = innodb comment '项目节点记录附件';
 
 
