@@ -100,6 +100,8 @@ type (
 		Name      string
 		UserId    int
 		CreatedAt []time.Time
+		Star      int
+		Type      int
 	}
 )
 
@@ -134,8 +136,8 @@ func (m *projectModel) Delete(id int) error {
 }
 
 func (m *projectModel) Update(project *Project) error {
-	sqlStr := fmt.Sprintf("update %s set `name` = ? ,  `attr`= ? , `type` = ?, `updated_id`= ? where `id` = %d", m.table, project.Id)
-	_, err := db.Exec(sqlStr, project.Name, project.Attr, project.Type, project.UpdatedId)
+	sqlStr := fmt.Sprintf("update %s set `name` = ? , `description` = ?, `attr`= ? , `star` = ?, `state` = ? , `type` = ?, `capacity` = ? , `properties`= ?, `area` = ?, `address` = ?, `connect` = ?, `investment_agreement` = ?, `business_condition` =? , `begin_time` = ?, `updated_id`= ? where `id` = %d", m.table, project.Id)
+	_, err := db.Exec(sqlStr, project.Name, project.Description, project.Attr, project.Star, project.State, project.Type, project.Capacity, project.Properties, project.Area, project.Address, project.Connect, project.InvestmentAgreement, project.BusinessCondition, project.BeginTime, project.UpdatedId)
 	if err != nil {
 		slog.Error("update project err ", "sql", sqlStr, "err ", err.Error())
 		return err
@@ -192,8 +194,18 @@ func (m *projectModel) buildProjectCond(cond *ProjectCond) (sqlCond string, args
 	}
 
 	if cond.Name != "" {
-		sqlCond += " and name = ?"
-		args = append(args, cond.Name)
+		sqlCond += " and name like ?"
+		args = append(args, "%"+cond.Name+"%")
+	}
+
+	if cond.Star > 0 {
+		sqlCond += " and star = ?"
+		args = append(args, cond.Star)
+	}
+
+	if cond.Type > 0 {
+		sqlCond += " and type = ?"
+		args = append(args, cond.Type)
 	}
 
 	if len(cond.CreatedAt) == 2 {

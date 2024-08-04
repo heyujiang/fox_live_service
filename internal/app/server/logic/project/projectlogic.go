@@ -89,6 +89,7 @@ type (
 		Attr                int     `json:"attr"`
 		State               int     `json:"state"`
 		Type                int     `json:"type"`
+		Star                int     `json:"star"`
 		Capacity            float64 `json:"capacity"`
 		Properties          string  `json:"properties"`
 		Area                float64 `json:"area"`
@@ -141,6 +142,8 @@ type (
 	ReqFromProjectList struct {
 		Name      string  `form:"name"`
 		UserId    int     `form:"userId"`
+		Star      int     `form:"star"`
+		Type      int     `form:"type"`
 		CreatedAt []int64 `form:"createdAt[]"`
 	}
 
@@ -415,7 +418,8 @@ func (b *bisLogic) Update(req *ReqUpdateProject, uid int) (*RespUpdateProject, e
 		Name:                req.Name,
 		Description:         req.Description,
 		Attr:                req.Attr,
-		State:               0,
+		Star:                req.Star,
+		State:               req.State,
 		Type:                req.Type,
 		Capacity:            req.Capacity,
 		Properties:          req.Properties,
@@ -507,7 +511,7 @@ func (b *bisLogic) List(req *ReqProjectList) (*RespProjectList, error) {
 			Username:            pro.Username,
 			InvestmentAgreement: pro.InvestmentAgreement,
 			BusinessCondition:   pro.BusinessCondition,
-			BeginTime:           pro.BeginTime.Format(global.TimeFormat),
+			BeginTime:           pro.BeginTime.Format(global.DateFormat),
 			CreatedAt:           pro.CreatedAt.Format(global.TimeFormat),
 			UpdatedAt:           pro.CreatedAt.Format(global.TimeFormat),
 		})
@@ -530,6 +534,14 @@ func (b *bisLogic) buildSearchCond(req *ReqProjectList) *model.ProjectCond {
 
 	if req.UserId != 0 {
 		cond.UserId = req.UserId
+	}
+
+	if req.Star != 0 {
+		cond.Star = req.Star
+	}
+
+	if req.Type != 0 {
+		cond.Type = req.Type
 	}
 
 	if len(req.CreatedAt) == 2 {

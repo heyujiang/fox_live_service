@@ -14,8 +14,8 @@ type (
 	personLogic struct{}
 
 	ReqCreateProjectPerson struct {
-		ProjectId int `json:"project_id"`
-		UserId    int `json:"user_id"`
+		ProjectId int `json:"projectId"`
+		UserId    int `json:"userId"`
 		Type      int `json:"type"`
 	}
 
