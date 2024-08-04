@@ -122,17 +122,6 @@ func (m *menuLogic) GetMenus(uid int) ([]*RespMenuListItem, error) {
 					},
 					Path: "project_ing",
 				},
-				{
-					Name:      "addproject_ing",
-					Component: "/project/addproject_ing/index",
-					Meta: &MenuMeta{
-						Id:           674,
-						Locale:       "新建项目进度",
-						IgnoreCache:  true,
-						RequiresAuth: true,
-					},
-					Path: "addproject_ing",
-				},
 			},
 		},
 		{
