@@ -22,7 +22,7 @@ func (h *projectRecordHandler) Create(c *gin.Context) {
 		return
 	}
 
-	res, err := project.RecordLogic.Create(&req)
+	res, err := project.RecordLogic.Create(&req, c.GetInt("uid"), c.GetString("username"))
 	if err != nil {
 		common.ResponseErr(c, err)
 		return
@@ -95,7 +95,7 @@ func (h *projectRecordHandler) Info(c *gin.Context) {
 
 func (h *projectRecordHandler) List(c *gin.Context) {
 	var req project.ReqProjectRecordList
-	if err := c.ShouldBindUri(&req); err != nil {
+	if err := c.ShouldBindQuery(&req); err != nil {
 		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
 		return
 	}

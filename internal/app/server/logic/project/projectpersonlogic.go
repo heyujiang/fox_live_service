@@ -76,6 +76,11 @@ func newPersonLogic() *personLogic {
 }
 
 func (b *personLogic) Create(req *ReqCreateProjectPerson, uid int) (*RespCreateProjectPerson, error) {
+
+	if req.Type == model.ProjectPersonTypeFirst {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "不能添加负责人")
+	}
+
 	user, err := model.UserModel.Find(req.UserId)
 	if err != nil {
 		slog.Error("create project person get user error ", "id", req.UserId, "err", err)
@@ -94,10 +99,19 @@ func (b *personLogic) Create(req *ReqCreateProjectPerson, uid int) (*RespCreateP
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目错误")
 	}
 
+	//查询用户是否为项目成员
+	projectPerson, err := model.ProjectPersonModel.FindByProjectIdAndUserId(req.ProjectId, req.UserId)
+	if err != nil && !errors.Is(err, model.ErrNotRecord) {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目成员失败")
+	}
+	if projectPerson != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "用户已经是项目成员了")
+	}
+
 	if err := model.ProjectPersonModel.Create(&model.ProjectPerson{
 		ProjectId:   project.Id,
 		UserId:      user.Id,
-		Name:        user.Name,
+		Name:        user.Username,
 		PhoneNumber: user.PhoneNumber,
 		Type:        req.Type,
 		CreatedId:   uid,

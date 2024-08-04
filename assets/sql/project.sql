@@ -64,8 +64,11 @@ create table project_person (
 create table project_record (
     id int unsigned not null auto_increment primary key comment 'id',
     project_id int unsigned not null default 0 comment '项目id',
+    project_name varchar(200) not null default '' comment '项目名称',
     node_id int unsigned not null default 0 comment '节点id',
+    node_name varchar(200) not null default '' comment '节点名称',
     user_id int unsigned not null default 0 comment '用户id',
+    username varchar(200) not null default '' comment '用户名称',
     overview varchar(1000) not null default '' comment '概况',
     created_id int unsigned not null default 0 comment '',
     updated_id int unsigned not null default 0 comment '',

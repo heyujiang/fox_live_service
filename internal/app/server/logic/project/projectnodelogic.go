@@ -76,6 +76,17 @@ type (
 		*NodeItem
 		Children []*TreeNodeItem `json:"children"`
 	}
+
+	ReqProjectNodeOption struct {
+		ProjectId int `uri:"id"`
+	}
+
+	RespProjectNodeOption struct {
+		NodeId   int                      `json:"value"`
+		Name     string                   `json:"label"`
+		Disabled bool                     `json:"disabled"`
+		Children []*RespProjectNodeOption `json:"children"`
+	}
 )
 
 func newNodeLogic() *nodeLogic {
@@ -223,4 +234,56 @@ func (n *nodeLogic) GetAllTreeNodes(projectId int) ([]*TreeNodeItem, error) {
 	}
 
 	return nodePIdMap[0], nil
+}
+
+func (n *nodeLogic) Option(req *ReqProjectNodeOption) ([]*RespProjectNodeOption, error) {
+	if req.ProjectId == 0 {
+		return []*RespProjectNodeOption{}, nil
+	}
+	nodes, err := n.GetAllTreeNodes(req.ProjectId)
+	if err != nil {
+		slog.Error("list node error ", "err", err)
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询节点数据错误")
+	}
+
+	records, err := model.ProjectRecordModel.GetAllByProjectId(req.ProjectId)
+	if err != nil {
+		slog.Error("list node error ", "err", err)
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询节点数据错误")
+	}
+	recordCountMap := make(map[int]int)
+	for _, v := range records {
+		recordCountMap[v.NodeId]++
+	}
+
+	attacheds, err := model.ProjectAttachedModel.GetAllByProjectId(req.ProjectId)
+	if err != nil {
+		slog.Error("list node error ", "err", err)
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询节点数据错误")
+	}
+	attachedCountMap := make(map[int]int)
+	for _, v := range attacheds {
+		attachedCountMap[v.NodeId]++
+	}
+
+	res := make([]*RespProjectNodeOption, 0)
+
+	for _, node := range nodes {
+		children := make([]*RespProjectNodeOption, 0, len(node.Children))
+		for _, child := range node.Children {
+			children = append(children, &RespProjectNodeOption{
+				NodeId:   child.NodeId,
+				Name:     child.Name,
+				Children: make([]*RespProjectNodeOption, 0),
+			})
+		}
+
+		res = append(res, &RespProjectNodeOption{
+			NodeId:   node.NodeId,
+			Name:     node.Name,
+			Disabled: true,
+			Children: children,
+		})
+	}
+	return res, nil
 }

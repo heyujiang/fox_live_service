@@ -115,3 +115,29 @@ func (m *projectPersonModel) BatchInsert(projectPersons []*ProjectPerson) error 
 	}
 	return err
 }
+
+func (m *projectPersonModel) FindByProjectIdAndUserId(projectId, userId int) (*ProjectPerson, error) {
+	sqlStr := fmt.Sprintf("select * from %s where `project_id` = ? and `user_id` = ? limit 1", m.table)
+	projectPerson := new(ProjectPerson)
+	if err := db.Get(projectPerson, sqlStr, projectId, userId); err != nil {
+		slog.Error("find project person err ", "sql", sqlStr, "project_id ", projectId, "user_id", userId, "err ", err.Error())
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotRecord
+		}
+		return nil, err
+	}
+	return projectPerson, nil
+}
+
+func (m *projectPersonModel) FindFirst(projectId int) (*ProjectPerson, error) {
+	sqlStr := fmt.Sprintf("select * from %s where `project_id` = ? and `type` = ? limit 1", m.table)
+	projectPerson := new(ProjectPerson)
+	if err := db.Get(projectPerson, sqlStr, projectId, ProjectPersonTypeFirst); err != nil {
+		slog.Error("find project first person err ", "sql", sqlStr, "project_id ", projectId, "err ", err.Error())
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotRecord
+		}
+		return nil, err
+	}
+	return projectPerson, nil
+}

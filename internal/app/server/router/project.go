@@ -15,8 +15,10 @@ func registerProject(e *gin.Engine) {
 	project.POST("/:id", handler.ProjectHandler.Update)
 	project.GET("/:id", handler.ProjectHandler.Info)
 	project.GET("", handler.ProjectHandler.List)
+	project.GET("/option", handler.ProjectHandler.Option)
 
 	project.GET("/nodes/:id", handler.ProjectNodeHandler.List)
+	project.GET("/nodes/option/:id", handler.ProjectNodeHandler.Option)
 
 	project.GET("/record", handler.ProjectRecordHandler.List)
 	project.POST("/record", handler.ProjectRecordHandler.Create)

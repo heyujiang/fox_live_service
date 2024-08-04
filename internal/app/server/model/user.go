@@ -214,7 +214,7 @@ func (m *userModel) UpdateState(id, state, uid int) error {
 
 func (m *userModel) SelectByEnable() ([]*User, error) {
 	var users []*User
-	sqlStr := fmt.Sprintf("select * from %s where `state` = ? limit 1", m.table)
+	sqlStr := fmt.Sprintf("select * from %s where `state` = ?", m.table)
 	if err := db.Select(&users, sqlStr, UserStatusEnable); err != nil {
 		slog.Error("find user options error", "sql", sqlStr, "err ", err.Error())
 		return nil, err

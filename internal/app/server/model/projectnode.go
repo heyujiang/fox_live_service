@@ -86,6 +86,19 @@ func (m *projectNodeModel) Find(id int) (*ProjectNode, error) {
 	return projectNode, nil
 }
 
+func (m *projectNodeModel) FindByProjectIdAndNodeId(projectId, nodeId int) (*ProjectNode, error) {
+	sqlStr := fmt.Sprintf("select * from %s where `project_id` = ? and `node_id` = ? limit 1 ", m.table)
+	projectNode := new(ProjectNode)
+	if err := db.Get(projectNode, sqlStr, projectId, nodeId); err != nil {
+		slog.Error("find project node by project and node err ", "sql", sqlStr, "project_id", projectId, "node_id", nodeId, "err ", err.Error())
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotRecord
+		}
+		return nil, err
+	}
+	return projectNode, nil
+}
+
 func (m *projectNodeModel) UpdateProjectNodeState(id int, state, uid int) error {
 	sqlStr := fmt.Sprintf("update %s set `state` = ? , `updated_id`= ?  where `id` = %d", m.table, id)
 	_, err := db.Exec(sqlStr, state, uid)

@@ -158,6 +158,16 @@ func (m *projectModel) Find(id int) (*Project, error) {
 	return project, nil
 }
 
+func (m *projectModel) Select() ([]*Project, error) {
+	sqlStr := fmt.Sprintf("select * from %s where 1 = 1", m.table)
+	projects := make([]*Project, 0)
+	if err := db.Select(&projects, sqlStr); err != nil {
+		slog.Error("select project err ", "sql", sqlStr, "err ", err.Error())
+		return nil, err
+	}
+	return projects, nil
+}
+
 func (m *projectModel) GetProjectByCond(cond *ProjectCond, pageIndex, pageSize int) ([]*Project, error) {
 	if pageIndex < 1 {
 		pageIndex = 1

@@ -110,3 +110,20 @@ func (h *projectHandler) List(c *gin.Context) {
 	common.ResponseOK(c, res)
 	return
 }
+
+func (h *projectHandler) Option(c *gin.Context) {
+	var req project.ReqProjectOption
+	if err := c.ShouldBindQuery(&req); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
+
+	res, err := project.BisLogic.Option(&req)
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+
+	common.ResponseOK(c, res)
+	return
+}

@@ -175,6 +175,14 @@ type (
 		CreatedAt           string  `json:"createdAt"`
 		UpdatedAt           string  `json:"updatedAt"`
 	}
+
+	ReqProjectOption struct {
+	}
+
+	RespProjectOption struct {
+		Id   int    `json:"value"`
+		Name string `json:"label"`
+	}
 )
 
 func newBisLogic() *bisLogic {
@@ -380,7 +388,7 @@ func (b *bisLogic) buildProjectPerson(persons []*CreateProjectPerson, uid int) (
 		projectPersons = append(projectPersons, &model.ProjectPerson{
 			UserId:      person.UserId,
 			Type:        person.Type,
-			Name:        userInfoMap[person.UserId].Name,
+			Name:        userInfoMap[person.UserId].Username,
 			PhoneNumber: userInfoMap[person.UserId].PhoneNumber,
 			CreatedId:   uid,
 		})
@@ -549,4 +557,21 @@ func (b *bisLogic) buildSearchCond(req *ReqProjectList) *model.ProjectCond {
 	}
 
 	return cond
+}
+
+func (b *bisLogic) Option(req *ReqProjectOption) ([]*RespProjectOption, error) {
+	projects, err := model.ProjectModel.Select()
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取项目错误")
+	}
+
+	res := make([]*RespProjectOption, 0, len(projects))
+	for _, v := range projects {
+		res = append(res, &RespProjectOption{
+			Id:   v.Id,
+			Name: v.Name,
+		})
+	}
+
+	return res, nil
 }

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	inertProjectRecordStr = "`project_id`,`node_id`,`user_id`,`overview`,`created_at`,`updated_at`"
+	inertProjectRecordStr = "`project_id`,`project_name`,`node_id`,`node_name`,`user_id`,`username`,`overview`,`created_id`,`updated_id`"
 )
 
 var (
@@ -18,15 +18,18 @@ var (
 
 type (
 	ProjectRecord struct {
-		Id        int       `db:"id"`
-		ProjectId string    `db:"project_id"`
-		NodeId    int       `db:"node_id"`
-		UserId    string    `db:"user_id"`
-		Overview  int       `db:"overview"`
-		CreatedId int       `db:"created_id"`
-		UpdatedId int       `db:"updated_id"`
-		CreatedAt time.Time `db:"created_at"`
-		UpdatedAt time.Time `db:"updated_at"`
+		Id          int       `db:"id"`
+		ProjectId   int       `db:"project_id"`
+		ProjectName string    `db:"project_name"`
+		NodeId      int       `db:"node_id"`
+		NodeName    string    `db:"node_name"`
+		UserId      int       `db:"user_id"`
+		Username    string    `db:"username"`
+		Overview    string    `db:"overview"`
+		CreatedId   int       `db:"created_id"`
+		UpdatedId   int       `db:"updated_id"`
+		CreatedAt   time.Time `db:"created_at"`
+		UpdatedAt   time.Time `db:"updated_at"`
 	}
 
 	projectRecordModel struct {
@@ -48,8 +51,8 @@ func newProjectRecordModel() *projectRecordModel {
 }
 
 func (m *projectRecordModel) Create(projectRecord *ProjectRecord) error {
-	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?)", m.table, inertProjectRecordStr)
-	_, err := db.Exec(sqlStr, projectRecord.ProjectId, projectRecord.NodeId, projectRecord.UserId, projectRecord.Overview, projectRecord.CreatedId, projectRecord.UpdatedId)
+	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?,?,?)", m.table, inertProjectRecordStr)
+	_, err := db.Exec(sqlStr, projectRecord.ProjectId, projectRecord.ProjectName, projectRecord.NodeId, projectRecord.NodeName, projectRecord.UserId, projectRecord.Username, projectRecord.Overview, projectRecord.CreatedId, projectRecord.UpdatedId)
 	if err != nil {
 		slog.Error("insert project record err ", "sql", sqlStr, "err ", err.Error())
 		return err
@@ -90,12 +93,25 @@ func (m *projectRecordModel) Find(id int) (*ProjectRecord, error) {
 	return projectRecord, nil
 }
 
+func (m *projectRecordModel) GetProjectRecordCountByCond(cond *ProjectRecordCond) (int, error) {
+	sqlCond, args := m.buildProjectRecordCond(cond)
+	sqlStr := fmt.Sprintf("select count(*) from %s where 1 = 1 %s order by created_at desc", m.table, sqlCond)
+	var count int
+	if err := db.Get(&count, sqlStr, args...); err != nil {
+		slog.Error("get project record count error ", "sql", sqlStr, "err ", err.Error())
+		return 0, err
+	}
+	return count, nil
+}
+
 func (m *projectRecordModel) GetProjectRecordByCond(cond *ProjectRecordCond, pageIndex, pageSize int) ([]*ProjectRecord, error) {
 	if pageIndex < 1 {
 		pageIndex = 1
 	}
 	sqlCond, args := m.buildProjectRecordCond(cond)
+	fmt.Println(fmt.Sprintf("sqlcond : %s , args : %+v", sqlCond, args))
 	sqlStr := fmt.Sprintf("select * from %s where 1 = 1 %s limit %d,%d", m.table, sqlCond, (pageIndex-1)*pageSize, pageSize)
+	fmt.Println(sqlStr)
 	var projectRecords []*ProjectRecord
 	if err := db.Select(&projectRecords, sqlStr, args...); err != nil {
 		slog.Error("get project record error ", "sql", sqlStr, "err ", err.Error())
@@ -108,22 +124,22 @@ func (m *projectRecordModel) buildProjectRecordCond(cond *ProjectRecordCond) (sq
 	if cond == nil {
 		return
 	}
-
+	fmt.Println(fmt.Sprintf("%+v", cond))
 	if cond.Id > 0 {
-		sqlCond += "and id = ?"
+		sqlCond += " and id = ?"
 		args = append(args, cond.Id)
 	}
 	if cond.ProjectId > 0 {
-		sqlCond += "and project_id = ?"
-		args = append(args, cond.Id)
+		sqlCond += " and project_id = ?"
+		args = append(args, cond.ProjectId)
 	}
 	if cond.NodeId > 0 {
-		sqlCond += "and node_id = ?"
-		args = append(args, cond.Id)
+		sqlCond += " and node_id = ?"
+		args = append(args, cond.NodeId)
 	}
 	if cond.UserId > 0 {
-		sqlCond += "and user_id = ?"
-		args = append(args, cond.Id)
+		sqlCond += " and user_id = ?"
+		args = append(args, cond.UserId)
 	}
 	return
 }
