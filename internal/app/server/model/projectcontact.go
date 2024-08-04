@@ -82,6 +82,7 @@ func (m *projectContactModel) Find(id int) (*ProjectContact, error) {
 func (m *projectContactModel) SelectByProjectId(projectId int) ([]*ProjectContact, error) {
 	sqlStr := fmt.Sprintf("select * from %s where `project_id` = ? order by `type` asc", m.table)
 	var projectContacts []*ProjectContact
+	fmt.Println(sqlStr, projectId)
 	if err := db.Select(&projectContacts, sqlStr, projectId); err != nil {
 		slog.Error("select project contact err ", "sql", sqlStr, "project_id", projectId, "err ", err.Error())
 		return nil, err

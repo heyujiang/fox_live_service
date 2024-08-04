@@ -24,11 +24,11 @@ func registerProject(e *gin.Engine) {
 
 	project.POST("/person", handler.ProjectPersonHandler.Create)
 	project.DELETE("/person/:id", handler.ProjectPersonHandler.Delete)
-	project.GET("/person/:project_id", handler.ProjectPersonHandler.List)
+	project.GET("/person/:projectId", handler.ProjectPersonHandler.List)
 
 	project.POST("/contact", handler.ProjectContactHandler.Create)
 	project.DELETE("/contact/:id", handler.ProjectContactHandler.Delete)
-	project.GET("/contact/:project_id", handler.ProjectContactHandler.List)
+	project.GET("/contact/:projectId", handler.ProjectContactHandler.List)
 
 	project.GET("/attached", handler.ProjectAttachedHandler.List)
 	project.POST("/attached", handler.ProjectAttachedHandler.Create)

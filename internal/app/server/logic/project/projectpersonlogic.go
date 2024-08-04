@@ -50,7 +50,7 @@ type (
 	}
 
 	ReqProjectPersonList struct {
-		ProjectId int `uri:"project_id"`
+		ProjectId int `uri:"projectId"`
 	}
 
 	RespProjectPersonList struct {
@@ -116,7 +116,7 @@ func (b *personLogic) Delete(req *ReqDeleteProjectPerson) (*RespDeleteProjectPer
 	return &RespDeleteProjectPerson{}, nil
 }
 
-func (b *personLogic) List(req *ReqProjectPersonList) (*RespProjectPersonList, error) {
+func (b *personLogic) List(req *ReqProjectPersonList) ([]*ListProjectPersonItem, error) {
 	persons, err := model.ProjectPersonModel.SelectByProjectId(req.ProjectId)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取项目成员失败")
@@ -135,7 +135,5 @@ func (b *personLogic) List(req *ReqProjectPersonList) (*RespProjectPersonList, e
 		})
 	}
 
-	return &RespProjectPersonList{
-		List: res,
-	}, nil
+	return res, nil
 }

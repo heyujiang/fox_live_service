@@ -58,6 +58,7 @@ type (
 		IsLeaf        int                    `json:"isLeaf"`
 		RecordTotal   int                    `json:"recordTotal"`
 		AttachedTotal int                    `json:"attachedTotal"`
+		Progress      float64                `json:"progress"`
 		Children      []*RespProjectNodeItem `json:"children"`
 	}
 
@@ -132,7 +133,14 @@ func (n *nodeLogic) List(req *ReqProjectNodeList) ([]*RespProjectNodeItem, error
 
 	for _, node := range nodes {
 		children := make([]*RespProjectNodeItem, 0, len(node.Children))
+		var progress, nodeFinishedTotal, nodeTotal float64
 		for _, child := range node.Children {
+			nodeTotal++
+			if child.State == model.ProjectNodeStateInProcess {
+				nodeFinishedTotal += 0.5
+			} else if child.State == model.ProjectNodeStateFinished {
+				nodeFinishedTotal += 1
+			}
 			children = append(children, &RespProjectNodeItem{
 				Id:            child.Id,
 				NodeId:        child.NodeId,
@@ -141,11 +149,15 @@ func (n *nodeLogic) List(req *ReqProjectNodeList) ([]*RespProjectNodeItem, error
 				State:         child.State,
 				IsLeaf:        child.IsLeaf,
 				Sort:          child.Sort,
+				Progress:      0,
 				RecordTotal:   recordCountMap[child.NodeId],
 				AttachedTotal: attachedCountMap[child.NodeId],
 				Children:      make([]*RespProjectNodeItem, 0),
 			})
 		}
+
+		progress = nodeFinishedTotal / nodeTotal
+
 		res = append(res, &RespProjectNodeItem{
 			Id:            node.Id,
 			NodeId:        node.NodeId,
@@ -154,6 +166,7 @@ func (n *nodeLogic) List(req *ReqProjectNodeList) ([]*RespProjectNodeItem, error
 			State:         node.State,
 			IsLeaf:        node.IsLeaf,
 			Sort:          node.Sort,
+			Progress:      progress,
 			RecordTotal:   recordCountMap[node.NodeId],
 			AttachedTotal: attachedCountMap[node.NodeId],
 			Children:      children,

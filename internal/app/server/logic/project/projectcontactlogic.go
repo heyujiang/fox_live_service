@@ -2,6 +2,7 @@ package project
 
 import (
 	"errors"
+	"fmt"
 	"fox_live_service/config/global"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
@@ -108,13 +109,14 @@ func (b *contactLogic) Delete(req *ReqDeleteProjectContact) (*RespDeleteProjectC
 	return &RespDeleteProjectContact{}, nil
 }
 
-func (b *contactLogic) List(req *ReqProjectContactList) (*RespProjectContactList, error) {
-	Contacts, err := model.ProjectContactModel.SelectByProjectId(req.ProjectId)
+func (b *contactLogic) List(req *ReqProjectContactList) ([]*ListProjectContactItem, error) {
+	contacts, err := model.ProjectContactModel.SelectByProjectId(req.ProjectId)
+	fmt.Println(contacts)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取项目联系人失败")
 	}
-	res := make([]*ListProjectContactItem, 0, len(Contacts))
-	for _, v := range Contacts {
+	res := make([]*ListProjectContactItem, 0, len(contacts))
+	for _, v := range contacts {
 		res = append(res, &ListProjectContactItem{
 			Id:          v.Id,
 			ProjectId:   v.ProjectId,
@@ -127,7 +129,5 @@ func (b *contactLogic) List(req *ReqProjectContactList) (*RespProjectContactList
 		})
 	}
 
-	return &RespProjectContactList{
-		List: res,
-	}, nil
+	return res, nil
 }
