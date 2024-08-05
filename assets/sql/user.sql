@@ -17,3 +17,4 @@ create table user (
   unique key `uk_phone_number` (`phone_number`),
   unique key `uk_email` (`email`)
 ) engine = innodb comment 'USER';
+

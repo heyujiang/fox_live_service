@@ -165,6 +165,7 @@ type (
 		Capacity            float64 `json:"capacity"`
 		Properties          string  `json:"properties"`
 		Area                float64 `json:"area"`
+		Description         string  `json:"description"`
 		Address             string  `json:"address"`
 		Connect             string  `json:"connect"`
 		Star                int     `json:"star"`
@@ -512,6 +513,7 @@ func (b *bisLogic) List(req *ReqProjectList) (*RespProjectList, error) {
 			Schedule:            pro.Schedule,
 			Capacity:            pro.Capacity,
 			Properties:          pro.Properties,
+			Description:         pro.Description,
 			Area:                pro.Area,
 			Address:             pro.Address,
 			Connect:             pro.Connect,

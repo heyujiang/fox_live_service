@@ -90,7 +90,6 @@ create table project_attached (
     created_id int unsigned not null default 0 comment '',
     created_at timestamp not null default current_timestamp comment '创建时间',
     KEY  `idx_record_id` (`record_id`),
-    KEY `idx_project_id` (`project_id`)
 ) engine = innodb comment '项目节点记录附件';
 
 
