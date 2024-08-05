@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fox_live_service/config/global"
 	"fox_live_service/internal/app/server/logic/user"
 	"fox_live_service/pkg/common"
 	"fox_live_service/pkg/errorx"
@@ -23,7 +24,7 @@ func (u *userHandler) Login(c *gin.Context) {
 		return
 	}
 
-	res, err := user.LoginLogic.Login(&req)
+	res, err := user.LoginLogic.Login(&req, global.Config.GetString("AccessToken.JwtTokenKey"))
 	if err != nil {
 		common.ResponseErr(c, err)
 		return

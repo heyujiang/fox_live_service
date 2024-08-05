@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/casbin/casbin/v2 v2.98.0
 	github.com/casbin/gorm-adapter/v2 v2.1.0
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-sql-driver/mysql v1.8.1

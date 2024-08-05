@@ -2,8 +2,10 @@ package user
 
 import (
 	"errors"
+	"fmt"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
+	"fox_live_service/pkg/util/jwttokenx"
 	"golang.org/x/exp/slog"
 )
 
@@ -34,7 +36,7 @@ func newLogicLogic() *loginLogic {
 }
 
 // Login 用户名密码登录
-func (l loginLogic) Login(req *ReqLogin) (*RespLogin, error) {
+func (l loginLogic) Login(req *ReqLogin, jwtTokenKey string) (*RespLogin, error) {
 	//查询用户是否存在
 	user, err := model.UserModel.FindByUsername(req.Username)
 	if err != nil {
@@ -44,7 +46,8 @@ func (l loginLogic) Login(req *ReqLogin) (*RespLogin, error) {
 		slog.Error("login error")
 		return nil, err
 	}
-
+	fmt.Println(fmt.Sprintf("user : %+v", user))
+	fmt.Println(fmt.Sprintf("res : %+v", req))
 	//判断密码是否争正确
 	if user.Username != req.Username || user.Password != req.Password {
 		slog.Error("password error")
@@ -55,8 +58,13 @@ func (l loginLogic) Login(req *ReqLogin) (*RespLogin, error) {
 		return nil, errorx.NewErrorX(errorx.ErrUserNotExist, "用户未启用，请联系管理员")
 	}
 
+	// 生成最终token
+	token, err := jwttokenx.GenerateToken(jwtTokenKey, user.Id, user.Username, 1*24*60*60, 6*24*60*60)
+	if err != nil {
+		return nil, err
+	}
+
 	//生成TOKEN
-	token := "thisisusernamelogintoken"
 	return &RespLogin{
 		Id:          user.Id,
 		Username:    user.Username,
