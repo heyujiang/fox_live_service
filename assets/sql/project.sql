@@ -3,6 +3,7 @@ drop table project_node;
 drop table project_record;
 drop table project_attached;
 drop table project_person;
+drop table project_contact;
 
 create table project (
     id int unsigned not null auto_increment primary key comment 'id',
@@ -55,9 +56,7 @@ create table project_person (
     phone_number varchar(11) not null default 0 comment '手机号',
     type tinyint unsigned not null default 0 comment '成员类型:1-第一负责人，2-第二负责人，3-普通成员',
     created_id int unsigned not null default 0 comment '',
-    updated_id int unsigned not null default 0 comment '',
     created_at timestamp not null default current_timestamp comment '创建时间',
-    updated_at timestamp not null default current_timestamp on update current_timestamp comment '更新时间',
     UNIQUE KEY `uk_project_id_user_id` (`project_id`,`user_id`)
 ) engine = innodb comment '项目成员负责人';
 
@@ -70,13 +69,13 @@ create table project_record (
     user_id int unsigned not null default 0 comment '用户id',
     username varchar(200) not null default '' comment '用户名称',
     overview varchar(1000) not null default '' comment '概况',
+    state tinyint unsigned not null default 0 comment '提交的节点状态',
     created_id int unsigned not null default 0 comment '',
     updated_id int unsigned not null default 0 comment '',
     created_at timestamp not null default current_timestamp comment '创建时间',
     updated_at timestamp not null default current_timestamp on update current_timestamp comment '更新时间',
     key `idx_project_id_node_id` (`project_id`,`node_id`)
 ) engine = innodb comment '项目节点记录';
-
 
 create table project_attached (
     id int unsigned not null auto_increment primary key comment 'id',
@@ -89,7 +88,7 @@ create table project_attached (
     file_ext varchar(20) not null default  '' comment '附件格式',
     created_id int unsigned not null default 0 comment '',
     created_at timestamp not null default current_timestamp comment '创建时间',
-    KEY  `idx_record_id` (`record_id`),
+    KEY  `idx_record_id` (`record_id`)
 ) engine = innodb comment '项目节点记录附件';
 
 
@@ -115,5 +114,5 @@ create table project_contact(
     description varchar(500) not null default '' comment '描述备注',
     created_id int unsigned not null default 0 comment '',
     created_at timestamp not null default current_timestamp comment '创建时间',
-    UNIQUE KEY `uk_project_id` (`project_id`)
+    KEY `idk_project_id` (`project_id`)
 ) engine = innodb comment '项目联系人';

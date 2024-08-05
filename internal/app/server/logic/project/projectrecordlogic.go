@@ -19,6 +19,7 @@ type (
 		ProjectId int    `json:"projectId"`
 		NodeId    int    `json:"nodeId"`
 		Overview  string `json:"overview"`
+		State     int    `json:"state"`
 	}
 
 	RespCreateProjectRecord struct{}
@@ -39,6 +40,7 @@ type (
 	}
 
 	ReqBodyUpdateProjectRecord struct {
+		Overview string `json:"overview"`
 	}
 
 	RespUpdateProjectRecord struct {
@@ -78,6 +80,7 @@ type (
 		UserId      int    `json:"userId"`
 		Username    string `json:"username"`
 		Overview    string `json:"overview"`
+		State       int    `json:"state"`
 		CreatedAt   string `json:"createdAt"`
 		UpdatedAt   string `json:"updatedAt"`
 	}
@@ -113,10 +116,21 @@ func (b *recordLogic) Create(req *ReqCreateProjectRecord, uid int, username stri
 		UserId:      uid,
 		Username:    username,
 		Overview:    req.Overview,
+		State:       req.State,
 		CreatedId:   uid,
 		UpdatedId:   uid,
 	}); err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "新增项目记录出错")
+	}
+
+	if req.State == model.ProjectRecordStateFinished { // 修改项目节点为完成
+		if err := model.ProjectNodeModel.UpdateProjectNodeState(projectNode.Id, model.ProjectNodeStateFinished, uid); err != nil {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "修改项目状态出错")
+		}
+	} else if req.State == model.ProjectRecordStateIng { //进行中
+		if err := model.ProjectNodeModel.UpdateProjectNodeState(projectNode.Id, model.ProjectNodeStateInProcess, uid); err != nil {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "修改项目状态出错")
+		}
 	}
 
 	return &RespCreateProjectRecord{}, nil
@@ -126,7 +140,24 @@ func (b *recordLogic) Delete(req *ReqDeleteProjectRecord) (*RespDeleteProjectRec
 	return &RespDeleteProjectRecord{}, nil
 }
 
-func (b *recordLogic) Update(req *ReqUpdateProjectRecord) (*RespUpdateProjectRecord, error) {
+func (b *recordLogic) Update(req *ReqUpdateProjectRecord, uid int) (*RespUpdateProjectRecord, error) {
+	//查询项目
+	project, err := model.ProjectRecordModel.Find(req.Id)
+	if err != nil {
+		if errors.Is(err, model.ErrNotRecord) {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "项目记录不存在")
+		}
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目记录错误")
+	}
+
+	if err := model.ProjectRecordModel.Update(&model.ProjectRecord{
+		Id:        project.Id,
+		Overview:  req.Overview,
+		UpdatedId: uid,
+	}); err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "编辑项目记录出错")
+	}
+
 	return &RespUpdateProjectRecord{}, nil
 }
 
@@ -160,6 +191,7 @@ func (b *recordLogic) List(req *ReqProjectRecordList) (*RespProjectRecordList, e
 			UserId:      pro.UserId,
 			Username:    pro.Username,
 			Overview:    pro.Overview,
+			State:       pro.State,
 			CreatedAt:   pro.CreatedAt.Format(global.TimeFormat),
 			UpdatedAt:   pro.UpdatedAt.Format(global.TimeFormat),
 		})

@@ -2,9 +2,11 @@ package project
 
 import (
 	"errors"
+	"fmt"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
 	"golang.org/x/exp/slog"
+	"strconv"
 )
 
 var NodeLogic = newNodeLogic()
@@ -167,7 +169,7 @@ func (n *nodeLogic) List(req *ReqProjectNodeList) ([]*RespProjectNodeItem, error
 			})
 		}
 
-		progress = nodeFinishedTotal / nodeTotal
+		progress, _ = strconv.ParseFloat(fmt.Sprintf("%.2f", nodeFinishedTotal/nodeTotal), 64)
 
 		res = append(res, &RespProjectNodeItem{
 			Id:            node.Id,

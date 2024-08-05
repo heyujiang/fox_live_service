@@ -9,7 +9,10 @@ import (
 )
 
 const (
-	inertProjectRecordStr = "`project_id`,`project_name`,`node_id`,`node_name`,`user_id`,`username`,`overview`,`created_id`,`updated_id`"
+	ProjectRecordStateFinished int = iota + 1
+	ProjectRecordStateIng
+
+	inertProjectRecordStr = "`project_id`,`project_name`,`node_id`,`node_name`,`user_id`,`username`,`overview`,`state`,`created_id`,`updated_id`"
 )
 
 var (
@@ -26,6 +29,7 @@ type (
 		UserId      int       `db:"user_id"`
 		Username    string    `db:"username"`
 		Overview    string    `db:"overview"`
+		State       int       `db:"state"`
 		CreatedId   int       `db:"created_id"`
 		UpdatedId   int       `db:"updated_id"`
 		CreatedAt   time.Time `db:"created_at"`
@@ -51,8 +55,8 @@ func newProjectRecordModel() *projectRecordModel {
 }
 
 func (m *projectRecordModel) Create(projectRecord *ProjectRecord) error {
-	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?,?,?)", m.table, inertProjectRecordStr)
-	_, err := db.Exec(sqlStr, projectRecord.ProjectId, projectRecord.ProjectName, projectRecord.NodeId, projectRecord.NodeName, projectRecord.UserId, projectRecord.Username, projectRecord.Overview, projectRecord.CreatedId, projectRecord.UpdatedId)
+	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?,?,?,?)", m.table, inertProjectRecordStr)
+	_, err := db.Exec(sqlStr, projectRecord.ProjectId, projectRecord.ProjectName, projectRecord.NodeId, projectRecord.NodeName, projectRecord.UserId, projectRecord.Username, projectRecord.Overview, projectRecord.State, projectRecord.CreatedId, projectRecord.UpdatedId)
 	if err != nil {
 		slog.Error("insert project record err ", "sql", sqlStr, "err ", err.Error())
 		return err

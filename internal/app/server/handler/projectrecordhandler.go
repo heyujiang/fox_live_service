@@ -56,7 +56,7 @@ func (h *projectRecordHandler) Update(c *gin.Context) {
 		return
 	}
 	var reqBody project.ReqBodyUpdateProjectRecord
-	if err := c.ShouldBindUri(&reqUri); err != nil {
+	if err := c.ShouldBindJSON(&reqBody); err != nil {
 		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
 		return
 	}
@@ -66,7 +66,7 @@ func (h *projectRecordHandler) Update(c *gin.Context) {
 		ReqBodyUpdateProjectRecord: reqBody,
 	}
 
-	res, err := project.RecordLogic.Update(&req)
+	res, err := project.RecordLogic.Update(&req, c.GetInt("uid"))
 	if err != nil {
 		common.ResponseErr(c, err)
 		return
