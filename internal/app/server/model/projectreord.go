@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/spf13/cast"
 	"golang.org/x/exp/slog"
 	"time"
 )
@@ -56,11 +57,13 @@ func newProjectRecordModel() *projectRecordModel {
 
 func (m *projectRecordModel) Create(projectRecord *ProjectRecord) error {
 	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?,?,?,?)", m.table, inertProjectRecordStr)
-	_, err := db.Exec(sqlStr, projectRecord.ProjectId, projectRecord.ProjectName, projectRecord.NodeId, projectRecord.NodeName, projectRecord.UserId, projectRecord.Username, projectRecord.Overview, projectRecord.State, projectRecord.CreatedId, projectRecord.UpdatedId)
+	res, err := db.Exec(sqlStr, projectRecord.ProjectId, projectRecord.ProjectName, projectRecord.NodeId, projectRecord.NodeName, projectRecord.UserId, projectRecord.Username, projectRecord.Overview, projectRecord.State, projectRecord.CreatedId, projectRecord.UpdatedId)
 	if err != nil {
 		slog.Error("insert project record err ", "sql", sqlStr, "err ", err.Error())
 		return err
 	}
+	lastInsertId, _ := res.LastInsertId()
+	projectRecord.Id = cast.ToInt(lastInsertId)
 	return nil
 }
 

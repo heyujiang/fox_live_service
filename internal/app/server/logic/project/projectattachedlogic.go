@@ -46,6 +46,13 @@ type (
 
 	ListProjectAttachedItem struct {
 	}
+
+	AttachedFile struct {
+		Url      string `json:"url"`
+		Filename string `json:"filename"`
+		Size     int64  `json:"size"`
+		Mime     string `json:"mime"`
+	}
 )
 
 func newAttachedLogic() *attachedLogic {

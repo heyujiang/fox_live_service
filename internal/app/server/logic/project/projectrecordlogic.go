@@ -8,6 +8,7 @@ import (
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
 	"golang.org/x/exp/slog"
+	"time"
 )
 
 var RecordLogic = newRecordLogic()
@@ -16,10 +17,11 @@ type (
 	recordLogic struct{}
 
 	ReqCreateProjectRecord struct {
-		ProjectId int    `json:"projectId"`
-		NodeId    int    `json:"nodeId"`
-		Overview  string `json:"overview"`
-		State     int    `json:"state"`
+		ProjectId int           `json:"projectId"`
+		NodeId    int           `json:"nodeId"`
+		Overview  string        `json:"overview"`
+		State     int           `json:"state"`
+		File      *AttachedFile `json:"file"`
 	}
 
 	RespCreateProjectRecord struct{}
@@ -108,7 +110,7 @@ func (b *recordLogic) Create(req *ReqCreateProjectRecord, uid int, username stri
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目节点错误")
 	}
 
-	if err := model.ProjectRecordModel.Create(&model.ProjectRecord{
+	projectRecord := &model.ProjectRecord{
 		ProjectId:   req.ProjectId,
 		ProjectName: project.Name,
 		NodeId:      req.NodeId,
@@ -119,7 +121,8 @@ func (b *recordLogic) Create(req *ReqCreateProjectRecord, uid int, username stri
 		State:       req.State,
 		CreatedId:   uid,
 		UpdatedId:   uid,
-	}); err != nil {
+	}
+	if err := model.ProjectRecordModel.Create(projectRecord); err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "新增项目记录出错")
 	}
 
@@ -130,6 +133,25 @@ func (b *recordLogic) Create(req *ReqCreateProjectRecord, uid int, username stri
 	} else if req.State == model.ProjectRecordStateIng { //进行中
 		if err := model.ProjectNodeModel.UpdateProjectNodeState(projectNode.Id, model.ProjectNodeStateInProcess, uid); err != nil {
 			return nil, errorx.NewErrorX(errorx.ErrCommon, "修改项目状态出错")
+		}
+	}
+
+	if req.File != nil {
+		attached := model.ProjectAttached{
+			ProjectId: req.ProjectId,
+			NodeId:    req.NodeId,
+			RecordId:  projectRecord.Id,
+			UserId:    uid,
+			Url:       req.File.Url,
+			Filename:  req.File.Filename,
+			Mime:      req.File.Mime,
+			Size:      req.File.Size,
+			CreatedId: 0,
+			CreatedAt: time.Time{},
+		}
+
+		if err := model.ProjectAttachedModel.Create(&attached); err != nil {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "保存附件信息出错")
 		}
 	}
 

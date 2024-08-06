@@ -14,6 +14,8 @@ var (
 	//C:\Users\syxsx\GolandProjects\fox_live_service\config
 	//ConfigPath = "C:/Users/syxsx/GolandProjects/fox_live_service/configs"
 	ConfigFile = "config"
+
+	FileUploadPath = "storages/upload"
 )
 
 var (

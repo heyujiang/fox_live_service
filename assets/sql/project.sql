@@ -83,9 +83,10 @@ create table project_attached (
     node_id int unsigned not null default 0 comment '节点id',
     record_id int unsigned not null default 0 comment '节点记录id',
     user_id int unsigned not null default 0 comment '用户id',
-    file_url varchar(255) not null default '' comment '附件地址',
-    file_name varchar(255) not null default '' comment '附件名称',
-    file_ext varchar(20) not null default  '' comment '附件格式',
+    url varchar(255) not null default '' comment '附件地址',
+    filename varchar(255) not null default '' comment '附件名称',
+    mime varchar(20) not null default  '' comment '附件格式',
+    size int unsigned not null default 0 comment '文件大小',
     created_id int unsigned not null default 0 comment '',
     created_at timestamp not null default current_timestamp comment '创建时间',
     KEY  `idx_record_id` (`record_id`)

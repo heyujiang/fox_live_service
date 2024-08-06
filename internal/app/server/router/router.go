@@ -42,9 +42,10 @@ func Register() *gin.Engine {
 		c.String(http.StatusOK, "Welcome to fox...")
 	})
 
+	registerStaticRouters(e)
 	registerUser(e)
 	registerProject(e)
 	registerNode(e)
-
+	registerUpload(e)
 	return e
 }

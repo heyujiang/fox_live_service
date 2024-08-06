@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	inertProjectAttachedStr = "`project_id`,`node_id`,`record_id`,`user_id`,`file_url`,`file_name`,`file_ext`,`created_id`"
+	inertProjectAttachedStr = "`project_id`,`node_id`,`record_id`,`user_id`,`url`,`filename`,`mime`,`size`,`created_id`"
 )
 
 var (
@@ -19,13 +19,14 @@ var (
 type (
 	ProjectAttached struct {
 		Id        int       `db:"id"`
-		ProjectId string    `db:"project_id"`
+		ProjectId int       `db:"project_id"`
 		NodeId    int       `db:"node_id"`
 		RecordId  int       `db:"record_id"`
 		UserId    int       `db:"user_id"`
-		FileUrl   string    `db:"file_url"`
-		FileName  string    `db:"file_name"`
-		FileExt   string    `db:"file_ext"`
+		Url       string    `db:"url"`
+		Filename  string    `db:"filename"`
+		Mime      string    `db:"mime"`
+		Size      int64     `db:"size"`
 		CreatedId int       `db:"created_id"`
 		CreatedAt time.Time `db:"created_at"`
 	}
@@ -50,8 +51,8 @@ func newProjectAttachedModel() *projectAttachedModel {
 }
 
 func (m *projectAttachedModel) Create(projectAttached *ProjectAttached) error {
-	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?,?)", m.table, inertProjectAttachedStr)
-	_, err := db.Exec(sqlStr, projectAttached.ProjectId, projectAttached.NodeId, projectAttached.UserId, projectAttached.FileUrl, projectAttached.FileName, projectAttached.FileExt, projectAttached.CreatedId)
+	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?,?,?)", m.table, inertProjectAttachedStr)
+	_, err := db.Exec(sqlStr, projectAttached.ProjectId, projectAttached.NodeId, projectAttached.RecordId, projectAttached.UserId, projectAttached.Url, projectAttached.Filename, projectAttached.Mime, projectAttached.Size, projectAttached.CreatedId)
 	if err != nil {
 		slog.Error("insert project attached err ", "sql", sqlStr, "err ", err.Error())
 		return err
