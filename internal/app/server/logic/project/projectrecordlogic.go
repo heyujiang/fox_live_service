@@ -2,7 +2,6 @@ package project
 
 import (
 	"errors"
-	"fmt"
 	"fox_live_service/config/global"
 	"fox_live_service/internal/app/server/logic"
 	"fox_live_service/internal/app/server/model"
@@ -190,7 +189,6 @@ func (b *recordLogic) Info(req *ReqInfoProjectRecord) (*RespInfoProjectRecord, e
 func (b *recordLogic) List(req *ReqProjectRecordList) (*RespProjectRecordList, error) {
 	logic.VerifyReqPage(&req.ReqPage)
 	cond := b.buildSearchCond(req)
-	fmt.Println(fmt.Sprintf("cond : %+v", cond))
 	totalCount, err := model.ProjectRecordModel.GetProjectRecordCountByCond(cond)
 	if err != nil {
 		slog.Error("list project record count error", "err", err.Error())
@@ -227,6 +225,36 @@ func (b *recordLogic) List(req *ReqProjectRecordList) (*RespProjectRecordList, e
 	}, nil
 }
 
+func (b *recordLogic) ListNoPage(req *ReqProjectRecordList) ([]*ListProjectRecordItem, error) {
+	cond := b.buildSearchCond(req)
+	req.Page = 1
+	req.Size = 1000
+	projects, err := model.ProjectRecordModel.GetProjectRecordByCond(cond, req.Page, req.Size)
+	if err != nil {
+		slog.Error("list project record list error", "err", err.Error())
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取项目记录列表错误")
+	}
+
+	items := make([]*ListProjectRecordItem, 0, len(projects))
+	for _, pro := range projects {
+		items = append(items, &ListProjectRecordItem{
+			Id:          pro.Id,
+			ProjectId:   pro.ProjectId,
+			ProjectName: pro.ProjectName,
+			NodeId:      pro.NodeId,
+			NodeName:    pro.NodeName,
+			UserId:      pro.UserId,
+			Username:    pro.Username,
+			Overview:    pro.Overview,
+			State:       pro.State,
+			CreatedAt:   pro.CreatedAt.Format(global.TimeFormat),
+			UpdatedAt:   pro.UpdatedAt.Format(global.TimeFormat),
+		})
+	}
+
+	return items, nil
+}
+
 func (b *recordLogic) buildSearchCond(req *ReqProjectRecordList) *model.ProjectRecordCond {
 	cond := &model.ProjectRecordCond{}
 
@@ -244,3 +272,7 @@ func (b *recordLogic) buildSearchCond(req *ReqProjectRecordList) *model.ProjectR
 
 	return cond
 }
+
+//func ()  {
+
+//}

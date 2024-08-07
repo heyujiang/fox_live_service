@@ -85,7 +85,7 @@ create table project_attached (
     user_id int unsigned not null default 0 comment '用户id',
     url varchar(255) not null default '' comment '附件地址',
     filename varchar(255) not null default '' comment '附件名称',
-    mime varchar(20) not null default  '' comment '附件格式',
+    mime varchar(100) not null default  '' comment '附件格式',
     size int unsigned not null default 0 comment '文件大小',
     created_id int unsigned not null default 0 comment '',
     created_at timestamp not null default current_timestamp comment '创建时间',

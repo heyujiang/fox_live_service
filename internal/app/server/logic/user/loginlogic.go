@@ -2,7 +2,6 @@ package user
 
 import (
 	"errors"
-	"fmt"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
 	"fox_live_service/pkg/util/jwttokenx"
@@ -46,8 +45,7 @@ func (l loginLogic) Login(req *ReqLogin, jwtTokenKey string) (*RespLogin, error)
 		slog.Error("login error")
 		return nil, err
 	}
-	fmt.Println(fmt.Sprintf("user : %+v", user))
-	fmt.Println(fmt.Sprintf("res : %+v", req))
+
 	//判断密码是否争正确
 	if user.Username != req.Username || user.Password != req.Password {
 		slog.Error("password error")

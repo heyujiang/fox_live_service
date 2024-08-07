@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"fox_live_service/internal/app/server/logic/project"
 	"fox_live_service/pkg/common"
 	"fox_live_service/pkg/errorx"
@@ -66,7 +65,7 @@ func (h *projectHandler) Update(c *gin.Context) {
 		ReqUriUpdateProject:  reqUri,
 		ReqBodyUpdateProject: reqBody,
 	}
-	fmt.Println(fmt.Sprintf("%+v", req))
+
 	res, err := project.BisLogic.Update(&req, c.GetInt("uid"))
 	if err != nil {
 		common.ResponseErr(c, err)

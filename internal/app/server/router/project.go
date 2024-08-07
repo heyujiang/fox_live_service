@@ -24,6 +24,7 @@ func registerProject(e *gin.Engine) {
 	project.POST("/record", handler.ProjectRecordHandler.Create)
 	project.POST("/record/:id", handler.ProjectRecordHandler.Update)
 	project.DELETE("/record/:id", handler.ProjectRecordHandler.Delete)
+	project.GET("/record/node", handler.ProjectRecordHandler.ListNoPage)
 
 	project.POST("/person", handler.ProjectPersonHandler.Create)
 	project.DELETE("/person/:id", handler.ProjectPersonHandler.Delete)
@@ -36,5 +37,4 @@ func registerProject(e *gin.Engine) {
 	project.GET("/attached", handler.ProjectAttachedHandler.List)
 	project.POST("/attached", handler.ProjectAttachedHandler.Create)
 	project.DELETE("/attached/:id", handler.ProjectAttachedHandler.Delete)
-
 }

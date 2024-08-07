@@ -83,12 +83,9 @@ func (m *projectAttachedModel) Find(id int) (*ProjectAttached, error) {
 	return projectAttached, nil
 }
 
-func (m *projectAttachedModel) GetProjectAttachedByCond(cond *ProjectAttachedCond, pageIndex, pageSize int) ([]*ProjectAttached, error) {
-	if pageIndex < 1 {
-		pageIndex = 1
-	}
+func (m *projectAttachedModel) GetProjectAttachedByCond(cond *ProjectAttachedCond) ([]*ProjectAttached, error) {
 	sqlCond, args := m.buildProjectAttachedCond(cond)
-	sqlStr := fmt.Sprintf("select * from %s where 1 = 1 %s limit %d,%d", m.table, sqlCond, (pageIndex-1)*pageSize, pageSize)
+	sqlStr := fmt.Sprintf("select * from %s where 1 = 1 %s ", m.table, sqlCond)
 	var projectAttacheds []*ProjectAttached
 	if err := db.Select(&projectAttacheds, sqlStr, args...); err != nil {
 		slog.Error("get project attached error ", "sql", sqlStr, "err ", err.Error())
@@ -103,23 +100,23 @@ func (m *projectAttachedModel) buildProjectAttachedCond(cond *ProjectAttachedCon
 	}
 
 	if cond.Id > 0 {
-		sqlCond += "and id = ?"
+		sqlCond += " and id = ? "
 		args = append(args, cond.Id)
 	}
 	if cond.ProjectId > 0 {
-		sqlCond += "and project_id = ?"
+		sqlCond += " and project_id = ? "
 		args = append(args, cond.ProjectId)
 	}
 	if cond.RecordId > 0 {
-		sqlCond += "and record_id = ?"
+		sqlCond += " and record_id = ? "
 		args = append(args, cond.RecordId)
 	}
 	if cond.NodeId > 0 {
-		sqlCond += "and node_id = ?"
+		sqlCond += " and node_id = ? "
 		args = append(args, cond.NodeId)
 	}
 	if cond.UserId > 0 {
-		sqlCond += "and user_id = ?"
+		sqlCond += " and user_id = ? "
 		args = append(args, cond.UserId)
 	}
 	return

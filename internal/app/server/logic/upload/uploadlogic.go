@@ -58,9 +58,11 @@ var (
 			Mime: map[string]string{
 				"application/pdf":          "pdf",
 				"application/vnd.ms-excel": "xls",
-				"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
-				"application/msword": "doc",
+				"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":       "xlsx",
+				"application/wps-office.xlsx":                                             "xlsx",
+				"application/msword":                                                      "doc",
 				"application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+				"application/wps-office.docx":                                             "docx",
 			},
 		},
 	}
@@ -116,7 +118,6 @@ func (b *bisLogic) filter(req *ReqFileUpload) (string, error) {
 		return "", errorx.NewErrorX(errorx.ErrCommon, "不支持的上传类型")
 	}
 
-	fmt.Println("file size is ", req.File.Size)
 	if req.File.Size > filter.MaxSize {
 		return "", errorx.NewErrorX(errorx.ErrCommon, "文件大小超出限制")
 	}

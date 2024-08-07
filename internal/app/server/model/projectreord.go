@@ -116,9 +116,7 @@ func (m *projectRecordModel) GetProjectRecordByCond(cond *ProjectRecordCond, pag
 		pageIndex = 1
 	}
 	sqlCond, args := m.buildProjectRecordCond(cond)
-	fmt.Println(fmt.Sprintf("sqlcond : %s , args : %+v", sqlCond, args))
 	sqlStr := fmt.Sprintf("select * from %s where 1 = 1 %s limit %d,%d", m.table, sqlCond, (pageIndex-1)*pageSize, pageSize)
-	fmt.Println(sqlStr)
 	var projectRecords []*ProjectRecord
 	if err := db.Select(&projectRecords, sqlStr, args...); err != nil {
 		slog.Error("get project record error ", "sql", sqlStr, "err ", err.Error())
@@ -131,7 +129,7 @@ func (m *projectRecordModel) buildProjectRecordCond(cond *ProjectRecordCond) (sq
 	if cond == nil {
 		return
 	}
-	fmt.Println(fmt.Sprintf("%+v", cond))
+
 	if cond.Id > 0 {
 		sqlCond += " and id = ?"
 		args = append(args, cond.Id)

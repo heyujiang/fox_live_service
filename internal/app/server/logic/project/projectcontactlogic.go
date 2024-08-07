@@ -2,7 +2,6 @@ package project
 
 import (
 	"errors"
-	"fmt"
 	"fox_live_service/config/global"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
@@ -111,7 +110,6 @@ func (b *contactLogic) Delete(req *ReqDeleteProjectContact) (*RespDeleteProjectC
 
 func (b *contactLogic) List(req *ReqProjectContactList) ([]*ListProjectContactItem, error) {
 	contacts, err := model.ProjectContactModel.SelectByProjectId(req.ProjectId)
-	fmt.Println(contacts)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取项目联系人失败")
 	}

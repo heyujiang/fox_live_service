@@ -22,7 +22,7 @@ func (h *projectAttachedHandler) Create(c *gin.Context) {
 		return
 	}
 
-	res, err := project.AttachedLogic.Create(&req)
+	res, err := project.AttachedLogic.Create(&req, c.GetInt("uid"))
 	if err != nil {
 		common.ResponseErr(c, err)
 		return
@@ -95,7 +95,7 @@ func (h *projectAttachedHandler) Info(c *gin.Context) {
 
 func (h *projectAttachedHandler) List(c *gin.Context) {
 	var req project.ReqProjectAttachedList
-	if err := c.ShouldBindUri(&req); err != nil {
+	if err := c.ShouldBindQuery(&req); err != nil {
 		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
 		return
 	}

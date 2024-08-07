@@ -1,16 +1,12 @@
 package middleware
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
 func Cors() gin.HandlerFunc {
 	return func(c *gin.Context) {
-
-		fmt.Println(c.Request.Header.Get("Origin"))
-
 		method := c.Request.Method
 		// 可将将* 替换为指定的域名
 		c.Header("Access-Control-Allow-Origin", "*")
@@ -21,7 +17,6 @@ func Cors() gin.HandlerFunc {
 		if method == "OPTIONS" {
 			c.AbortWithStatus(http.StatusNoContent)
 		}
-		fmt.Println("sdad")
 		c.Next()
 	}
 }
