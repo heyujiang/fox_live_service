@@ -47,5 +47,6 @@ func Register() *gin.Engine {
 	registerProject(e)
 	registerNode(e)
 	registerUpload(e)
+	registerSystem(e)
 	return e
 }
