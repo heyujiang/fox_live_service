@@ -39,7 +39,7 @@ func (h *projectHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	res, err := project.BisLogic.Delete(&req)
+	res, err := project.BisLogic.Delete(&req, c.GetInt("uid"))
 	if err != nil {
 		common.ResponseErr(c, err)
 		return

@@ -26,11 +26,13 @@ create table project (
     investment_agreement varchar(1000) not null default '' comment '投资协议',
     business_condition varchar(1000) not null default '' comment '商务条件',
     begin_time timestamp null comment '开始时间',
+    is_deleted tinyint unsigned not null  default 0 comment '是否删除，0否，1是',
     created_id int unsigned not null default 0 comment '',
     updated_id int unsigned not null default 0 comment '',
     created_at timestamp not null default current_timestamp comment '创建时间',
     updated_at timestamp not null default current_timestamp on update current_timestamp comment '更新时间'
 ) engine = innodb comment 'project';
+
 
 create table project_node (
      id int unsigned not null auto_increment primary key comment 'id',

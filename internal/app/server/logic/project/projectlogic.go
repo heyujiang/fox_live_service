@@ -414,15 +414,31 @@ func (b *bisLogic) buildProjectContact(contacts []*CreateProjectContact, uid int
 	return projectContacts, nil
 }
 
-func (b *bisLogic) Delete(req *ReqDeleteProject) (*RespDeleteProject, error) {
-	if err := model.ProjectModel.Delete(req.Id); err != nil {
+func (b *bisLogic) Delete(req *ReqDeleteProject, uid int) (*RespDeleteProject, error) {
+	_, err := model.ProjectModel.Find(req.Id)
+	if err != nil {
+		if errors.Is(err, model.ErrNotRecord) {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "项目不存在")
+		}
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目出错")
+	}
+
+	if err := model.ProjectModel.Delete(req.Id, uid); err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "删除项目失败")
 	}
 	return &RespDeleteProject{}, nil
 }
 
 func (b *bisLogic) Update(req *ReqUpdateProject, uid int) (*RespUpdateProject, error) {
-	err := model.ProjectModel.Update(&model.Project{
+	_, err := model.ProjectModel.Find(req.Id)
+	if err != nil {
+		if errors.Is(err, model.ErrNotRecord) {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "删除项目不存在")
+		}
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目出错")
+	}
+
+	err = model.ProjectModel.Update(&model.Project{
 		Id:                  req.Id,
 		Name:                req.Name,
 		Description:         req.Description,

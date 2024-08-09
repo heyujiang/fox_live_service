@@ -78,7 +78,7 @@ func newPersonLogic() *personLogic {
 func (b *personLogic) Create(req *ReqCreateProjectPerson, uid int) (*RespCreateProjectPerson, error) {
 
 	if req.Type == model.ProjectPersonTypeFirst {
-		return nil, errorx.NewErrorX(errorx.ErrCommon, "不能添加负责人")
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "不能添加第一负责人")
 	}
 
 	user, err := model.UserModel.Find(req.UserId)

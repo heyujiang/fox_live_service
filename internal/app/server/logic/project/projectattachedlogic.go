@@ -91,6 +91,14 @@ func (b *attachedLogic) Create(req *ReqCreateProjectAttached, uid int) (*RespCre
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询记录出错")
 	}
 
+	_, err = model.ProjectModel.Find(record.ProjectId)
+	if err != nil {
+		if errors.Is(err, model.ErrNotRecord) {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "项目不存在")
+		}
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目出错")
+	}
+
 	if err := model.ProjectAttachedModel.Create(&model.ProjectAttached{
 		ProjectId: record.ProjectId,
 		NodeId:    record.NodeId,

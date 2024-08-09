@@ -33,6 +33,11 @@ const (
 )
 
 const (
+	ProjectDeletedNo = iota
+	ProjectDeletedYes
+)
+
+const (
 	inertProjectStr = "`name`,`description`,`attr`,`state`,`type`,`node_id`,`node_name`,`schedule`,`capacity`,`properties`," +
 		"`area`,`address`,`connect`,`investment_agreement`,`business_condition`,`star`,`user_id`,`username`,`begin_time`,`created_id`,`updated_id`"
 )
@@ -86,6 +91,7 @@ type (
 		InvestmentAgreement string    `db:"investment_agreement"`
 		BusinessCondition   string    `db:"business_condition"`
 		BeginTime           time.Time `db:"begin_time"`
+		IsDeleted           int       `db:"is_deleted"`
 		CreatedId           int       `db:"created_id"`
 		UpdatedId           int       `db:"updated_id"`
 		CreatedAt           time.Time `db:"created_at"`
@@ -125,9 +131,9 @@ func (m *projectModel) Create(project *Project) (int, error) {
 	return cast.ToInt(projectId), nil
 }
 
-func (m *projectModel) Delete(id int) error {
-	sqlStr := fmt.Sprintf("delete from %s where `id` = ? ", m.table)
-	_, err := db.Exec(sqlStr, id)
+func (m *projectModel) Delete(id int, uid int) error {
+	sqlStr := fmt.Sprintf("update %s set `is_deleted` = ? , `updated_id` = ? where `id` = %d", m.table, id)
+	_, err := db.Exec(sqlStr, ProjectDeletedYes, uid)
 	if err != nil {
 		slog.Error("delete project err ", "sql", sqlStr, "err ", err.Error())
 		return err
@@ -146,9 +152,9 @@ func (m *projectModel) Update(project *Project) error {
 }
 
 func (m *projectModel) Find(id int) (*Project, error) {
-	sqlStr := fmt.Sprintf("select * from %s where `id` = ? limit 1", m.table)
+	sqlStr := fmt.Sprintf("select * from %s where `id` = ? and `is_deleted` = ? limit 1", m.table)
 	project := new(Project)
-	if err := db.Get(project, sqlStr, id); err != nil {
+	if err := db.Get(project, sqlStr, id, ProjectDeletedNo); err != nil {
 		slog.Error("find project err ", "sql", sqlStr, "id", id, "err ", err.Error())
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotRecord
@@ -159,9 +165,9 @@ func (m *projectModel) Find(id int) (*Project, error) {
 }
 
 func (m *projectModel) Select() ([]*Project, error) {
-	sqlStr := fmt.Sprintf("select * from %s where 1 = 1", m.table)
+	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ? ", m.table)
 	projects := make([]*Project, 0)
-	if err := db.Select(&projects, sqlStr); err != nil {
+	if err := db.Select(&projects, sqlStr, ProjectDeletedNo); err != nil {
 		slog.Error("select project err ", "sql", sqlStr, "err ", err.Error())
 		return nil, err
 	}
@@ -173,9 +179,9 @@ func (m *projectModel) GetProjectByCond(cond *ProjectCond, pageIndex, pageSize i
 		pageIndex = 1
 	}
 	sqlCond, args := m.buildProjectCond(cond)
-	sqlStr := fmt.Sprintf("select * from %s where 1 = 1 %s order by created_at desc limit %d,%d", m.table, sqlCond, (pageIndex-1)*pageSize, pageSize)
+	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ?  %s order by created_at desc limit %d,%d", m.table, sqlCond, (pageIndex-1)*pageSize, pageSize)
 	var projects []*Project
-	if err := db.Select(&projects, sqlStr, args...); err != nil {
+	if err := db.Select(&projects, sqlStr, append([]interface{}{ProjectDeletedNo}, args...)...); err != nil {
 		slog.Error("get projects error ", "sql", sqlStr, "err ", err.Error())
 		return nil, err
 	}
@@ -184,9 +190,9 @@ func (m *projectModel) GetProjectByCond(cond *ProjectCond, pageIndex, pageSize i
 
 func (m *projectModel) GetProjectCountByCond(cond *ProjectCond) (int, error) {
 	sqlCond, args := m.buildProjectCond(cond)
-	sqlStr := fmt.Sprintf("select count(*) from %s where 1 = 1 %s order by created_at desc", m.table, sqlCond)
+	sqlStr := fmt.Sprintf("select count(*) from %s where `is_deleted` = ? %s order by created_at desc", m.table, sqlCond)
 	var count int
-	if err := db.Get(&count, sqlStr, args...); err != nil {
+	if err := db.Get(&count, sqlStr, append([]interface{}{ProjectDeletedNo}, args...)...); err != nil {
 		slog.Error("get project count error ", "sql", sqlStr, "err ", err.Error())
 		return 0, err
 	}
@@ -227,7 +233,7 @@ func (m *projectModel) buildProjectCond(cond *ProjectCond) (sqlCond string, args
 }
 
 func (m *projectModel) UpdateProjectState(id int, state, uid int) error {
-	sqlStr := fmt.Sprintf("update %s set `state` = ? , `updated_id`= ?  where `id` = %d", m.table, id)
+	sqlStr := fmt.Sprintf("update %s set `state` = ? , `updated_id`= ?  where `id` = %d and `is_deleted` = %d", m.table, id, ProjectDeletedNo)
 	_, err := db.Exec(sqlStr, state, uid)
 	if err != nil {
 		slog.Error("update project state err ", "sql", sqlStr, "state", state, "err ", err.Error())

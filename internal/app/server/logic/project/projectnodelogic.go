@@ -116,6 +116,15 @@ func (n *nodeLogic) List(req *ReqProjectNodeList) ([]*RespProjectNodeItem, error
 	if req.ProjectId == 0 {
 		return []*RespProjectNodeItem{}, nil
 	}
+
+	_, err := model.ProjectModel.Find(req.ProjectId)
+	if err != nil {
+		if errors.Is(err, model.ErrNotRecord) {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "项目不存在")
+		}
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目出错")
+	}
+
 	nodes, err := n.GetAllTreeNodes(req.ProjectId)
 	if err != nil {
 		slog.Error("list node error ", "err", err)
@@ -242,6 +251,15 @@ func (n *nodeLogic) Option(req *ReqProjectNodeOption) ([]*RespProjectNodeOption,
 	if req.ProjectId == 0 {
 		return []*RespProjectNodeOption{}, nil
 	}
+
+	_, err := model.ProjectModel.Find(req.ProjectId)
+	if err != nil {
+		if errors.Is(err, model.ErrNotRecord) {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "项目不存在")
+		}
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目出错")
+	}
+
 	nodes, err := n.GetAllTreeNodes(req.ProjectId)
 	if err != nil {
 		slog.Error("list node error ", "err", err)

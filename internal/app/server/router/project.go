@@ -24,7 +24,7 @@ func registerProject(e *gin.Engine) {
 	project.POST("/record", handler.ProjectRecordHandler.Create)
 	project.POST("/record/:id", handler.ProjectRecordHandler.Update)
 	project.DELETE("/record/:id", handler.ProjectRecordHandler.Delete)
-	project.GET("/record/node", handler.ProjectRecordHandler.ListNoPage)
+	project.GET("/record/node", handler.ProjectRecordHandler.ListNoPage) //查询一个几点下提交过的项目记录
 
 	project.POST("/person", handler.ProjectPersonHandler.Create)
 	project.DELETE("/person/:id", handler.ProjectPersonHandler.Delete)
