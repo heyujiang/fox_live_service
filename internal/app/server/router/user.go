@@ -21,6 +21,10 @@ func registerUser(e *gin.Engine) {
 	user.DELETE("/:id", handler.UserHandler.Delete)        // 删除用户
 	user.GET("/options", handler.UserHandler.Options)      // 删除用户
 
-	user.GET("/menus", handler.UserHandler.Menus)
-	user.GET("/getUserInfo", handler.UserHandler.GetUserInfo)
+	user.GET("/menus", handler.UserHandler.Menus) //用户菜单
+
+	user.GET("/getUserInfo", handler.UserHandler.GetUserInfo)        // 获取登录用户信息
+	user.POST("/updateAvatar", handler.UserHandler.UpdateAvatar)     // 修改头像
+	user.POST("/updateBasic", handler.UserHandler.UpdateBasic)       // 修改基础信息
+	user.POST("/updatePassword", handler.UserHandler.UpdatePassword) // 修改密码
 }

@@ -190,3 +190,21 @@ func (u *userHandler) Options(c *gin.Context) {
 	common.ResponseOK(c, res)
 	return
 }
+
+func (u *userHandler) UpdateBasic(c *gin.Context) {
+	res, _ := user.AccountLogic.UserInfo(c.GetInt("uid"))
+	common.ResponseOK(c, res)
+	return
+}
+
+func (u *userHandler) UpdateAvatar(c *gin.Context) {
+	res, _ := user.AccountLogic.UserInfo(c.GetInt("uid"))
+	common.ResponseOK(c, res)
+	return
+}
+
+func (u *userHandler) UpdatePassword(c *gin.Context) {
+	res, _ := user.AccountLogic.UserInfo(c.GetInt("uid"))
+	common.ResponseOK(c, res)
+	return
+}

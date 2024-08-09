@@ -19,6 +19,7 @@ type (
 		Avatar       string `json:"avatar"`
 		Role         string `json:"role"`
 		Introduction string `json:"introduction"`
+		Email        string `json:"email"`
 	}
 )
 
@@ -40,6 +41,7 @@ func (a *accountLogic) UserInfo(uid int) (*RespAccountUserInfo, error) {
 		Name:         user.Name,
 		Nickname:     user.NickName,
 		Avatar:       user.Avatar,
+		Email:        user.Email,
 		Role:         "",
 		Introduction: "",
 	}, nil
