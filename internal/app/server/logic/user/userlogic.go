@@ -8,7 +8,9 @@ import (
 	"fox_live_service/internal/app/server/logic"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
+	"github.com/spf13/cast"
 	"golang.org/x/exp/slog"
+	"strings"
 )
 
 var BisLogic = newBisLogic()
@@ -48,17 +50,24 @@ type (
 		NickName    string `json:"nickName"`
 		Avatar      string `json:"avatar"`
 		State       int    `json:"state"`
+		RoleIds     []int  `json:"roleIds"`
+		Roles       string `json:"roles"`
+		DeptId      int    `json:"deptId"`
+		Dept        string `json:"dept"`
 		CreatedAt   string `json:"createdAt"`
 		UpdatedAt   string `json:"updatedAt"`
 	}
 
 	ReqCreateUser struct {
 		Username    string `json:"username"`
+		Password    string `json:"password"`
 		PhoneNumber string `json:"phoneNumber"`
 		Email       string `json:"email"`
 		Name        string `json:"name"`
 		NickName    string `json:"nickName"`
 		Avatar      string `json:"avatar"`
+		RoleIds     []int  `json:"roleIds"`
+		DeptId      int    `json:"deptId"`
 	}
 
 	RespCreateUser struct{}
@@ -77,6 +86,8 @@ type (
 		Name     string `json:"name"`
 		NickName string `json:"nickName"`
 		Avatar   string `json:"avatar"`
+		RoleIds  []int  `json:"roleIds"`
+		DeptId   int    `json:"deptId"`
 	}
 
 	RespUpdateUser struct {
@@ -95,6 +106,10 @@ type (
 		NickName    string `json:"nickName"`
 		Avatar      string `json:"avatar"`
 		State       int    `json:"state"`
+		RoleIds     []int  `json:"roleIds"`
+		Roles       string `json:"roles"`
+		DeptId      int    `json:"deptId"`
+		Dept        string `json:"dept"`
 		CreatedAt   string `json:"createdAt"`
 		UpdatedAt   string `json:"updatedAt"`
 	}
@@ -151,12 +166,14 @@ func (b *bisLogic) Create(req *ReqCreateUser, uid int) (*RespCreateUser, error) 
 
 	insertUser := model.User{
 		Username:    req.Username,
-		Password:    md5Password("12345678"),
+		Password:    req.Password,
 		PhoneNumber: req.PhoneNumber,
 		Email:       req.Email,
 		Name:        req.Name,
 		NickName:    req.NickName,
 		Avatar:      req.Avatar,
+		RoleIds:     strings.Join(cast.ToStringSlice(req.RoleIds), ","),
+		DeptId:      req.DeptId,
 		State:       model.UserStatusEnable,
 		CreatedId:   uid,
 		UpdatedId:   uid,
@@ -186,6 +203,8 @@ func (b *bisLogic) Update(req *ReqUpdateUser, uid int) (*RespUpdateUser, error) 
 		Email:     req.Email,
 		NickName:  req.NickName,
 		Avatar:    req.Avatar,
+		RoleIds:   strings.Join(cast.ToStringSlice(req.RoleIds), ","),
+		DeptId:    req.DeptId,
 		UpdatedId: uid,
 	}); err != nil {
 		slog.Error("update user error ", "id", req.Id, "err", err)
@@ -206,6 +225,22 @@ func (b *bisLogic) Info(req *ReqUserInfo) (*RespUserInfo, error) {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询用户错误")
 	}
 
+	dept, err := model.DeptModel.Find(user.DeptId)
+	if err != nil && !errors.Is(err, model.ErrNotRecord) {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询用户部门错误")
+	}
+
+	roleIds := cast.ToIntSlice(strings.Split(user.RoleIds, ","))
+	roles, err := model.RoleModel.SelectByIds(roleIds)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询用户角色错误")
+	}
+
+	roleTitles := make([]string, 0, len(roles))
+	for _, role := range roles {
+		roleTitles = append(roleTitles, role.Title)
+	}
+
 	return &RespUserInfo{
 		Id:          user.Id,
 		Username:    user.Username,
@@ -215,6 +250,10 @@ func (b *bisLogic) Info(req *ReqUserInfo) (*RespUserInfo, error) {
 		NickName:    user.NickName,
 		Avatar:      user.Avatar,
 		State:       user.State,
+		RoleIds:     roleIds,
+		Roles:       strings.Join(roleTitles, ","),
+		DeptId:      user.DeptId,
+		Dept:        dept.Title,
 		CreatedAt:   user.CreatedAt.Format(global.TimeFormat),
 		UpdatedAt:   user.UpdatedAt.Format(global.TimeFormat),
 	}, nil
@@ -234,8 +273,43 @@ func (b *bisLogic) List(req *ReqUserList) (*RespUserList, error) {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户列表错误")
 	}
 
+	deptIds := make([]int, 0, len(users))
+	roleIdStr := "0"
+	for _, user := range users {
+		deptIds = append(deptIds, user.DeptId)
+		if len(user.RoleIds) > 0 {
+			roleIdStr = fmt.Sprintf("%s,%s", roleIdStr, user.RoleIds)
+		}
+	}
+	roleIds := cast.ToIntSlice(strings.Split(roleIdStr, ","))
+	roles, err := model.RoleModel.SelectByIds(roleIds)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户角色出错")
+	}
+	roleMap := make(map[int]string, len(roles))
+	for _, role := range roles {
+		roleMap[role.Id] = role.Title
+	}
+
+	depts, err := model.DeptModel.SelectByIds(deptIds)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户部门出错")
+	}
+	deptMap := make(map[int]string, len(depts))
+	for _, dept := range depts {
+		deptMap[dept.Id] = dept.Title
+	}
+
 	items := make([]*Item, 0, len(users))
 	for _, user := range users {
+		userRoleIds := cast.ToIntSlice(strings.Split(user.RoleIds, ","))
+		userRoles := make([]string, 0, len(userRoleIds))
+		for _, roleId := range userRoleIds {
+			if role, ok := roleMap[roleId]; ok {
+				userRoles = append(userRoles, role)
+			}
+		}
+
 		items = append(items, &Item{
 			Id:          user.Id,
 			Username:    user.Username,
@@ -245,6 +319,10 @@ func (b *bisLogic) List(req *ReqUserList) (*RespUserList, error) {
 			NickName:    user.NickName,
 			Avatar:      user.Avatar,
 			State:       user.State,
+			RoleIds:     userRoleIds,
+			Roles:       strings.Join(userRoles, ","),
+			Dept:        deptMap[user.DeptId],
+			DeptId:      user.DeptId,
 			CreatedAt:   user.CreatedAt.Format(global.TimeFormat),
 			UpdatedAt:   user.CreatedAt.Format(global.TimeFormat),
 		})

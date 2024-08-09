@@ -168,7 +168,7 @@ func (m *ruleModel) SelectByIds(ids []int) ([]*Rule, error) {
 }
 
 func (m *ruleModel) SelectEnable() ([]*Rule, error) {
-	sqlStr := fmt.Sprintf("select * from %s where status = ? order by `order` asc , id asc", m.table)
+	sqlStr := fmt.Sprintf("select * from %s where status = ? order by id asc ,`order` asc ", m.table)
 	rules := make([]*Rule, 0)
 	if err := db.Select(&rules, sqlStr, RuleStatusEnable); err != nil {
 		slog.Error("select rule err ", "sql", sqlStr, "err ", err.Error())

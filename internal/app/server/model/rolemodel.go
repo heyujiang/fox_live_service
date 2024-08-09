@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 	"github.com/spf13/cast"
 	"golang.org/x/exp/slog"
 	"time"
@@ -117,6 +118,26 @@ func (m *roleModel) SelectEnable() ([]*Role, error) {
 	roles := make([]*Role, 0)
 	if err := db.Select(&roles, sqlStr, RuleStatusEnable); err != nil {
 		slog.Error("select role err ", "sql", sqlStr, "err ", err.Error())
+		return nil, err
+	}
+	return roles, nil
+}
+
+func (m *roleModel) SelectByIds(ids []int) ([]*Role, error) {
+	var roles []*Role
+	if len(ids) == 0 {
+		return roles, nil
+	}
+	sqlStr := fmt.Sprintf("select * from %s where id in (?) order by id asc", m.table)
+	query, args, err := sqlx.In(sqlStr, ids)
+
+	if err != nil {
+		slog.Error("batch select role by ids error", "sql", sqlStr, "ids", ids, "err ", err.Error())
+		return nil, err
+	}
+
+	if err := db.Select(&roles, query, args...); err != nil {
+		slog.Error("batch select role by uids error", "sql", sqlStr, "ids", ids, "err ", err.Error())
 		return nil, err
 	}
 	return roles, nil

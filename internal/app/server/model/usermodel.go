@@ -13,7 +13,7 @@ const (
 	UserStatusEnable = iota + 1
 	UserStatusDisable
 
-	inertStr = "`username`,`password`,`phone_number`,`email`,`name`,`nick_name`,`avatar`,`state`,`created_id`,`updated_id`"
+	inertStr = "`username`,`password`,`phone_number`,`email`,`name`,`nick_name`,`avatar`,`state`,`role_ids`,`dept_id`,`created_id`,`updated_id`"
 )
 
 var (
@@ -36,6 +36,8 @@ type (
 		NickName    string    `db:"nick_name"`
 		Avatar      string    `db:"avatar"`
 		State       int       `db:"state"`
+		RoleIds     string    `db:"role_ids"`
+		DeptId      int       `db:"dept_id"`
 		CreatedId   int       `db:"created_id"`
 		UpdatedId   int       `db:"updated_id"`
 		CreatedAt   time.Time `db:"created_at"`
@@ -62,8 +64,8 @@ func newUserModel() *userModel {
 
 // Insert 插入数据
 func (m *userModel) Insert(user *User) error {
-	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?,?,?,?)", m.table, inertStr)
-	result, err := db.Exec(sqlStr, user.Username, user.Password, user.PhoneNumber, user.Email, user.Name, user.NickName, user.Avatar, user.State, user.CreatedId, user.UpdatedId)
+	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?,?,?,?,?,?)", m.table, inertStr)
+	result, err := db.Exec(sqlStr, user.Username, user.Password, user.PhoneNumber, user.Email, user.Name, user.NickName, user.Avatar, user.State, user.RoleIds, user.DeptId, user.CreatedId, user.UpdatedId)
 	if err != nil {
 		slog.Error("insert user err ", "sql", sqlStr, "err ", err.Error())
 		return err
@@ -86,8 +88,8 @@ func (m *userModel) Delete(id int) error {
 
 // Update 更新数据
 func (m *userModel) Update(user *User) error {
-	sqlStr := fmt.Sprintf("update %s set `email` = ? ,`name` = ?, `nick_name`= ? , `avatar`= ? , `updated_id` = ? where `id` = %d", m.table, user.Id)
-	_, err := db.Exec(sqlStr, user.Email, user.Name, user.NickName, user.Avatar, user.UpdatedId)
+	sqlStr := fmt.Sprintf("update %s set `email` = ? ,`name` = ?, `nick_name`= ? , `avatar`= ? , `role_ids` = ?, `dept_id` = ?, `updated_id` = ? where `id` = %d", m.table, user.Id)
+	_, err := db.Exec(sqlStr, user.Email, user.Name, user.NickName, user.Avatar, user.RoleIds, user.DeptId, user.UpdatedId)
 	if err != nil {
 		slog.Error("update user err ", "sql", sqlStr, "err ", err.Error())
 		return err

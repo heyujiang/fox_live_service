@@ -25,4 +25,11 @@ func registerSystem(e *gin.Engine) {
 	system.GET("/role", handler.RoleHandler.List)
 	system.GET("/role/parents", handler.RoleHandler.Parents)
 
+	system.POST("/dept", handler.DeptHandler.Create)
+	system.DELETE("/dept/:id", handler.DeptHandler.Delete)
+	system.POST("/dept/:id", handler.DeptHandler.Update)
+	system.POST("/dept/updateStatus/:id", handler.DeptHandler.UpdateStatus)
+	system.GET("/dept", handler.DeptHandler.List)
+	system.GET("/dept/parents", handler.DeptHandler.Parents)
+
 }

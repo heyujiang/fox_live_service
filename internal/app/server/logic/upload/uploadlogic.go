@@ -34,7 +34,7 @@ type (
 
 	FileFilter struct {
 		MaxSize int64
-		Mime    map[string]string
+		Mime    map[string]struct{}
 	}
 )
 
@@ -44,25 +44,65 @@ const (
 )
 
 var (
+	Mime2Suffix = map[string]string{
+		"image/jpeg":                  ".jpg",
+		"image/png":                   ".png",
+		"image/gif":                   ".gif",
+		"image/bmp":                   ".bmp",
+		"image/webp":                  ".webp",
+		"application/pdf":             "pdf",
+		"application/zip":             "zip",
+		"application/vnd.rar":         "rar",
+		"application/x-7z-compressed": "7z",
+		"application/vnd.ms-excel":    "xls",
+		"application/wps-office.xls":  "xls",
+		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":         "xlsx",
+		"application/wps-office.xlsx":                                               "xlsx",
+		"application/msword":                                                        "doc",
+		"application/wps-office.doc":                                                "docx",
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document":   "docx",
+		"application/wps-office.docx":                                               "docx",
+		"application/vnd.ms-powerpoint":                                             "ppt",
+		"application/wps-office.ppt":                                                "ppt",
+		"application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
+		"application/wps-office.pptx":                                               "pptx",
+	}
+
 	FileFilerMap = map[string]*FileFilter{
 		FileUploadUserAvatar: {
 			MaxSize: 10 * 1000 * 1000,
-			Mime: map[string]string{
-				"image/jpeg": "jpg",
-				"image/png":  "png",
-				"image/gif":  "gif",
+			Mime: map[string]struct{}{
+				"image/jpeg": {},
+				"image/png":  {},
+				"image/gif":  {},
+				"image/bmp":  {},
+				"image/webp": {},
 			},
 		},
 		FileUploadRecordAttachedFile: {
 			MaxSize: 100 * 1000 * 1000,
-			Mime: map[string]string{
-				"application/pdf":          "pdf",
-				"application/vnd.ms-excel": "xls",
-				"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":       "xlsx",
-				"application/wps-office.xlsx":                                             "xlsx",
-				"application/msword":                                                      "doc",
-				"application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
-				"application/wps-office.docx":                                             "docx",
+			Mime: map[string]struct{}{
+				"image/jpeg":                  {},
+				"image/png":                   {},
+				"image/gif":                   {},
+				"image/bmp":                   {},
+				"image/webp":                  {},
+				"application/pdf":             {},
+				"application/zip":             {},
+				"application/vnd.rar":         {},
+				"application/x-7z-compressed": {},
+				"application/vnd.ms-excel":    {},
+				"application/wps-office.xls":  {},
+				"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":         {},
+				"application/wps-office.xlsx":                                               {},
+				"application/msword":                                                        {},
+				"application/wps-office.doc":                                                {},
+				"application/vnd.openxmlformats-officedocument.wordprocessingml.document":   {},
+				"application/wps-office.docx":                                               {},
+				"application/vnd.ms-powerpoint":                                             {},
+				"application/wps-office.ppt":                                                {},
+				"application/vnd.openxmlformats-officedocument.presentationml.presentation": {},
+				"application/wps-office.pptx":                                               {},
 			},
 		},
 	}
@@ -79,12 +119,13 @@ func newBisLogic() *bisLogic {
 
 // Upload 文件上传接口
 func (b *bisLogic) Upload(c *gin.Context, req *ReqFileUpload, uid int) (*RespFileUpload, error) {
-	ext, err := b.filter(req)
+	err := b.filter(req)
 	if err != nil {
 		return nil, err
 	}
 
-	fileSavePath := b.getUploadPath(req.Type, ext)
+	mime := req.File.Header.Get("Content-Type")
+	fileSavePath := b.getUploadPath(req.Type, Mime2Suffix[mime])
 
 	err = c.SaveUploadedFile(req.File, fileSavePath)
 	if err != nil {
@@ -95,7 +136,7 @@ func (b *bisLogic) Upload(c *gin.Context, req *ReqFileUpload, uid int) (*RespFil
 	if err := model.FileModel.Insert(&model.File{
 		Type:      req.Type,
 		Url:       url,
-		Mime:      req.File.Header.Get("Content-Type"),
+		Mime:      mime,
 		Size:      req.File.Size,
 		Filename:  req.File.Filename,
 		CreatedId: uid,
@@ -112,22 +153,22 @@ func (b *bisLogic) Upload(c *gin.Context, req *ReqFileUpload, uid int) (*RespFil
 	}, nil
 }
 
-func (b *bisLogic) filter(req *ReqFileUpload) (string, error) {
+func (b *bisLogic) filter(req *ReqFileUpload) error {
 	filter, ok := FileFilerMap[req.Type]
 	if !ok {
-		return "", errorx.NewErrorX(errorx.ErrCommon, "不支持的上传类型")
+		return errorx.NewErrorX(errorx.ErrCommon, "不支持的上传类型")
 	}
 
 	if req.File.Size > filter.MaxSize {
-		return "", errorx.NewErrorX(errorx.ErrCommon, "文件大小超出限制")
+		return errorx.NewErrorX(errorx.ErrCommon, "文件大小超出限制")
 	}
 	fileMime := req.File.Header.Get("Content-Type")
 	fmt.Println("file mime is ", fileMime)
-	ext, ok := filter.Mime[fileMime]
+	_, ok = filter.Mime[fileMime]
 	if !ok {
-		return "", errorx.NewErrorX(errorx.ErrCommon, "不支持的文件格式")
+		return errorx.NewErrorX(errorx.ErrCommon, "不支持的文件格式")
 	}
-	return ext, nil
+	return nil
 }
 
 func (b *bisLogic) getUploadPath(fileType string, ext string) string {

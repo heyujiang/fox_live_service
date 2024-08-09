@@ -9,6 +9,8 @@ create table user (
   nick_name varchar(30) not null default '' comment '昵称',
   avatar varchar(200) not null default '' comment '头像',
   state tinyint not null default 0 comment '状态,1-启用，2-禁用',
+  role_ids varchar(255) not null default '' comment '用户角色 id 用,分割' ,
+  dept_id int unsigned not null default 0 comment '部门id',
   created_id int unsigned not null default 0 comment '',
   updated_id int unsigned not null default 0 comment '',
   created_at timestamp not null default current_timestamp comment '创建时间',
@@ -17,4 +19,3 @@ create table user (
   unique key `uk_phone_number` (`phone_number`),
   unique key `uk_email` (`email`)
 ) engine = innodb comment 'USER';
-

@@ -44,3 +44,17 @@ create table role (
       updated_at timestamp not null default current_timestamp on update current_timestamp comment '更新时间',
       key `idx_pid` (`pid`)
 )  engine = innodb comment 'rule';
+
+create table dept (
+      id int unsigned primary key auto_increment ,
+      name varchar(100) not null default '' comment '菜单名称',
+      remark varchar(255) not null default '' comment '备注',
+      status tinyint unsigned not null default 0 comment '状态',
+      pid int unsigned not null default 0 comment 'pid',
+     `order` int unsigned not null default 0 comment '排序',
+      created_id int unsigned not null default 0 comment '',
+      updated_id int unsigned not null default 0 comment '',
+      created_at timestamp not null default current_timestamp comment '创建时间',
+      updated_at timestamp not null default current_timestamp on update current_timestamp comment '更新时间',
+      key `idx_pid` (`pid`)
+)  engine = innodb comment '部门';

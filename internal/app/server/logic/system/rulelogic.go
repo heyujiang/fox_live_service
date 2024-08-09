@@ -334,23 +334,47 @@ func (r *ruleLogic) GetRules(req *ReqGetRoleRules) ([]*RespRuleParentItem, error
 	}
 
 	rules := make([]*model.Rule, 0)
-	if role.Id == 1 {
-		rules, err = model.RuleModel.SelectEnable()
-		if err != nil {
-			return nil, errorx.NewErrorX(errorx.ErrCommon, "查询菜单信息出错")
-		}
-	} else {
+	rules, err = model.RuleModel.SelectEnable()
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询菜单信息出错")
+	}
+
+	roleRuleIdMap := make(map[int]struct{}) // role 拥有的 rule 的 id 的map ， 用作验证 rule 是否属于当前角色
+	if role.Id != 1 {
 		roleIds := cast.ToIntSlice(strings.Split(role.RuleIds, ","))
-		rules, err = model.RuleModel.SelectByIds(roleIds)
-		if err != nil {
-			return nil, errorx.NewErrorX(errorx.ErrCommon, "查询菜单信息出错")
+		for _, roleId := range roleIds {
+			roleRuleIdMap[roleId] = struct{}{}
 		}
+
+		ruleMapKId := make(map[int]*model.Rule, len(rules))
+		for _, rule := range rules {
+			ruleMapKId[rule.Id] = rule
+		}
+
+		for _, rule := range rules {
+			if _, ok := roleRuleIdMap[rule.Id]; ok { // rule 是当前 role 的 rule
+				//判断是否是顶级rule ，如否，判断其PID是否属于当前角色的rule，如否加入
+				if rule.Pid != 0 {
+					if _, pok := roleRuleIdMap[rule.Pid]; !pok {
+						roleIds = append(roleIds, rule.Pid)
+						roleRuleIdMap[rule.Pid] = struct{}{}
+					}
+				}
+			}
+		}
+
+		newRules := make([]*model.Rule, 0)
+		for _, rule := range rules {
+			if _, ok := roleRuleIdMap[rule.Id]; ok {
+				newRules = append(newRules, rule)
+			}
+		}
+		rules = newRules
 	}
 
 	ruleMap := make(map[int][]*RespRuleParentItem)
 	ruleMap[0] = []*RespRuleParentItem{}
 	for _, rule := range rules {
-		fmt.Println(fmt.Sprintf("%+v", rule))
 		if _, ok := ruleMap[rule.Pid]; !ok {
 			ruleMap[rule.Pid] = make([]*RespRuleParentItem, 0)
 		}

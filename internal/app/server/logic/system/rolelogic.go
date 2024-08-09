@@ -8,7 +8,6 @@ import (
 	"fox_live_service/pkg/errorx"
 	"github.com/spf13/cast"
 	"strings"
-	"time"
 )
 
 var (
@@ -23,7 +22,7 @@ type (
 		Title   string `json:"title"`
 		Pid     int    `json:"pid"`
 		Remark  string `json:"remark"`
-		RuleIds []int  `json:"RuleIds"`
+		RuleIds []int  `json:"ruleIds"`
 	}
 
 	RespCreateRole struct{}
@@ -122,10 +121,7 @@ func (r *roleLogic) Update(req *ReqUpdateRole, uid int) (*RespUpdateRole, error)
 		Pid:       req.Pid,
 		Remark:    req.Remark,
 		RuleIds:   strings.Join(cast.ToStringSlice(req.RuleIds), ","),
-		CreatedId: 0,
 		UpdatedId: uid,
-		CreatedAt: time.Time{},
-		UpdatedAt: time.Time{},
 	}); err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "编辑角色出错")
 	}
