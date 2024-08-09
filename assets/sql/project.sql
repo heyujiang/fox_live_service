@@ -33,6 +33,7 @@ create table project (
     updated_at timestamp not null default current_timestamp on update current_timestamp comment '更新时间'
 ) engine = innodb comment 'project';
 
+alter table project add is_deleted tinyint unsigned not null  default 0 comment '是否删除，0否，1是' after `begin_time`;
 
 create table project_node (
      id int unsigned not null auto_increment primary key comment 'id',

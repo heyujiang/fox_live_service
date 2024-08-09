@@ -192,19 +192,34 @@ func (u *userHandler) Options(c *gin.Context) {
 }
 
 func (u *userHandler) UpdateBasic(c *gin.Context) {
-	res, _ := user.AccountLogic.UserInfo(c.GetInt("uid"))
+	var req user.ReqUpdateBasic
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
+	res, _ := user.AccountLogic.UpdateBasic(&req, c.GetInt("uid"))
 	common.ResponseOK(c, res)
 	return
 }
 
 func (u *userHandler) UpdateAvatar(c *gin.Context) {
-	res, _ := user.AccountLogic.UserInfo(c.GetInt("uid"))
+	var req user.ReqUpdateAvatar
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
+	res, _ := user.AccountLogic.UpdateAvatar(&req, c.GetInt("uid"))
 	common.ResponseOK(c, res)
 	return
 }
 
 func (u *userHandler) UpdatePassword(c *gin.Context) {
-	res, _ := user.AccountLogic.UserInfo(c.GetInt("uid"))
+	var req user.ReqUpdatePassword
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
+	res, _ := user.AccountLogic.UpdatePassword(&req, c.GetInt("uid"))
 	common.ResponseOK(c, res)
 	return
 }

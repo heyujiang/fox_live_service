@@ -239,3 +239,33 @@ func (m *userModel) SelectByIds(ids []int) ([]*User, error) {
 	}
 	return users, nil
 }
+
+func (m *userModel) UpdateAvatar(id int, avatar string) error {
+	sqlStr := fmt.Sprintf("update %s set `avatar` = ? , `updated_id` = ?  where `id` = %d", m.table, id)
+	_, err := db.Exec(sqlStr, avatar, id)
+	if err != nil {
+		slog.Error("update user avatar err ", "sql", sqlStr, "id", id, "avatar", avatar, "err ", err.Error())
+		return err
+	}
+	return nil
+}
+
+func (m *userModel) UpdateBasic(user *User) error {
+	sqlStr := fmt.Sprintf("update %s set `email` = ?  , `updated_id` = ?  where `id` = %d", m.table, user.Id)
+	_, err := db.Exec(sqlStr, user.Email, user.UpdatedId)
+	if err != nil {
+		slog.Error("update user basic err ", "sql", sqlStr, "err ", err.Error())
+		return err
+	}
+	return nil
+}
+
+func (m *userModel) UpdatePassword(id int, password string) error {
+	sqlStr := fmt.Sprintf("update %s set `password` = ? , `updated_id` = ?  where `id` = %d", m.table, id)
+	_, err := db.Exec(sqlStr, password, id)
+	if err != nil {
+		slog.Error("update user password err ", "sql", sqlStr, "id", id, "err ", err.Error())
+		return err
+	}
+	return nil
+}
