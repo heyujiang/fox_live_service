@@ -91,7 +91,7 @@ func newDeptLogic() *deptLogic {
 
 func (r *deptLogic) Create(req *ReqCreateDept, uid int) (*RespCreateDept, error) {
 	if err := model.DeptModel.Create(&model.Dept{
-		Title:     req.Title,
+		Name:      req.Title,
 		Pid:       req.Pid,
 		Status:    model.DeptStatusEnable,
 		Remark:    req.Remark,
@@ -115,7 +115,7 @@ func (r *deptLogic) Update(req *ReqUpdateDept, uid int) (*RespUpdateDept, error)
 
 	if err := model.DeptModel.Update(&model.Dept{
 		Id:        req.Id,
-		Title:     req.Title,
+		Name:      req.Title,
 		Pid:       req.Pid,
 		Remark:    req.Remark,
 		Order:     req.Order,
@@ -158,7 +158,7 @@ func (r *deptLogic) List() ([]*RespDeptListItem, error) {
 
 		deptMap[dept.Pid] = append(deptMap[dept.Pid], &RespDeptListItem{
 			Id:        dept.Id,
-			Title:     dept.Title,
+			Title:     dept.Name,
 			Pid:       dept.Pid,
 			Remark:    dept.Remark,
 			Status:    dept.Status,
@@ -212,7 +212,7 @@ func (r *deptLogic) Parents() ([]*RespDeptParentItem, error) {
 		}
 		deptMap[dept.Pid] = append(deptMap[dept.Pid], &RespDeptParentItem{
 			Id:    dept.Id,
-			Title: dept.Title,
+			Title: dept.Name,
 		})
 	}
 

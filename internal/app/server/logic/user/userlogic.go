@@ -253,7 +253,7 @@ func (b *bisLogic) Info(req *ReqUserInfo) (*RespUserInfo, error) {
 		RoleIds:     roleIds,
 		Roles:       strings.Join(roleTitles, ","),
 		DeptId:      user.DeptId,
-		Dept:        dept.Title,
+		Dept:        dept.Name,
 		CreatedAt:   user.CreatedAt.Format(global.TimeFormat),
 		UpdatedAt:   user.UpdatedAt.Format(global.TimeFormat),
 	}, nil
@@ -297,7 +297,7 @@ func (b *bisLogic) List(req *ReqUserList) (*RespUserList, error) {
 	}
 	deptMap := make(map[int]string, len(depts))
 	for _, dept := range depts {
-		deptMap[dept.Id] = dept.Title
+		deptMap[dept.Id] = dept.Name
 	}
 
 	items := make([]*Item, 0, len(users))
