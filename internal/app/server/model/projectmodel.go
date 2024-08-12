@@ -4,8 +4,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 	"github.com/spf13/cast"
 	"golang.org/x/exp/slog"
+	"strings"
 	"time"
 )
 
@@ -38,7 +40,8 @@ const (
 )
 
 const (
-	inertProjectStr = "`name`,`description`,`attr`,`state`,`type`,`node_id`,`node_name`,`schedule`,`capacity`,`properties`," +
+	myProjectViewCountView = 8
+	inertProjectStr        = "`name`,`description`,`attr`,`state`,`type`,`node_id`,`node_name`,`schedule`,`capacity`,`properties`," +
 		"`area`,`address`,`connect`,`investment_agreement`,`business_condition`,`star`,`user_id`,`username`,`begin_time`,`created_id`,`updated_id`"
 )
 
@@ -108,6 +111,7 @@ type (
 		CreatedAt []time.Time
 		Star      int
 		Type      int
+		Ids       []int
 	}
 )
 
@@ -180,6 +184,9 @@ func (m *projectModel) GetProjectByCond(cond *ProjectCond, pageIndex, pageSize i
 	}
 	sqlCond, args := m.buildProjectCond(cond)
 	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ?  %s order by created_at desc limit %d,%d", m.table, sqlCond, (pageIndex-1)*pageSize, pageSize)
+
+	slog.Info(sqlStr, "sqlCond", sqlCond, "args", args)
+
 	var projects []*Project
 	if err := db.Select(&projects, sqlStr, append([]interface{}{ProjectDeletedNo}, args...)...); err != nil {
 		slog.Error("get projects error ", "sql", sqlStr, "err ", err.Error())
@@ -202,6 +209,15 @@ func (m *projectModel) GetProjectCountByCond(cond *ProjectCond) (int, error) {
 func (m *projectModel) buildProjectCond(cond *ProjectCond) (sqlCond string, args []interface{}) {
 	if cond == nil {
 		return
+	}
+
+	if len(cond.Ids) > 0 {
+		sqlCond += fmt.Sprintf("and id in (%s)", strings.Repeat(",?", len(cond.Ids))[1:])
+		argIds := make([]interface{}, 0, len(cond.Ids))
+		for _, id := range cond.Ids {
+			argIds = append(argIds, id)
+		}
+		args = append(args, argIds...)
 	}
 
 	if cond.UserId > 0 {
@@ -240,4 +256,25 @@ func (m *projectModel) UpdateProjectState(id int, state, uid int) error {
 		return err
 	}
 	return nil
+}
+
+func (m *projectModel) SelectByIds(ids []int) ([]*Project, error) {
+	projects := make([]*Project, 0)
+	if len(ids) == 0 {
+		return projects, nil
+	}
+
+	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ? and id in (?) order by created_at desc limit %d ", m.table, myProjectViewCountView)
+	query, args, err := sqlx.In(sqlStr, ProjectDeletedNo, ids)
+
+	if err != nil {
+		slog.Error("select my project by ids error", "sql", sqlStr, "ids", ids, "err ", err.Error())
+		return nil, err
+	}
+
+	if err := db.Select(&projects, query, args...); err != nil {
+		slog.Error("select my project by ids error", "sql", sqlStr, "ids", ids, "err ", err.Error())
+		return nil, err
+	}
+	return projects, nil
 }

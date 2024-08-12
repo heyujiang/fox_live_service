@@ -273,6 +273,56 @@ func (b *recordLogic) buildSearchCond(req *ReqProjectRecordList) *model.ProjectR
 	return cond
 }
 
-//func ()  {
+func (b *recordLogic) GetLatestRecords(uid int) ([]*ListProjectRecordItem, error) {
+	records, err := model.ProjectRecordModel.SelectByUserId(uid)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询最近提交记录出错")
+	}
 
-//}
+	res := make([]*ListProjectRecordItem, 0, len(records))
+
+	for _, v := range records {
+		res = append(res, &ListProjectRecordItem{
+			Id:          v.Id,
+			ProjectId:   v.ProjectId,
+			ProjectName: v.ProjectName,
+			NodeId:      v.NodeId,
+			NodeName:    v.NodeName,
+			UserId:      v.UserId,
+			Username:    v.Username,
+			Overview:    v.Overview,
+			State:       v.State,
+			CreatedAt:   v.CreatedAt.Format(global.TimeFormat),
+			UpdatedAt:   v.UpdatedAt.Format(global.TimeFormat),
+		})
+	}
+
+	return res, nil
+}
+
+func (b *recordLogic) GetAllLatestRecords() ([]*ListProjectRecordItem, error) {
+	records, err := model.ProjectRecordModel.Select()
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询最近提交记录出错")
+	}
+
+	res := make([]*ListProjectRecordItem, 0, len(records))
+
+	for _, v := range records {
+		res = append(res, &ListProjectRecordItem{
+			Id:          v.Id,
+			ProjectId:   v.ProjectId,
+			ProjectName: v.ProjectName,
+			NodeId:      v.NodeId,
+			NodeName:    v.NodeName,
+			UserId:      v.UserId,
+			Username:    v.Username,
+			Overview:    v.Overview,
+			State:       v.State,
+			CreatedAt:   v.CreatedAt.Format(global.TimeFormat),
+			UpdatedAt:   v.UpdatedAt.Format(global.TimeFormat),
+		})
+	}
+
+	return res, nil
+}

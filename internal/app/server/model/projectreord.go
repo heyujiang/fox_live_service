@@ -13,6 +13,8 @@ const (
 	ProjectRecordStateFinished int = iota + 1
 	ProjectRecordStateIng
 
+	latestRecordCountView = 5
+
 	inertProjectRecordStr = "`project_id`,`project_name`,`node_id`,`node_name`,`user_id`,`username`,`overview`,`state`,`created_id`,`updated_id`"
 )
 
@@ -154,6 +156,26 @@ func (m *projectRecordModel) GetAllByProjectId(projectId int) ([]*ProjectRecord,
 	var projectRecords []*ProjectRecord
 	if err := db.Select(&projectRecords, sqlStr, projectId); err != nil {
 		slog.Error("get project record error ", "sql", sqlStr, "project_id", projectId, "err ", err.Error())
+		return nil, err
+	}
+	return projectRecords, nil
+}
+
+func (m *projectRecordModel) SelectByUserId(userId int) ([]*ProjectRecord, error) {
+	sqlStr := fmt.Sprintf("select * from %s where user_id = ? order by created_at desc limit %d", m.table, latestRecordCountView)
+	var projectRecords []*ProjectRecord
+	if err := db.Select(&projectRecords, sqlStr, userId); err != nil {
+		slog.Error("get project record error ", "sql", sqlStr, "user_id", userId, "err ", err.Error())
+		return nil, err
+	}
+	return projectRecords, nil
+}
+
+func (m *projectRecordModel) Select() ([]*ProjectRecord, error) {
+	sqlStr := fmt.Sprintf("select * from %s where 1 = 1 order by created_at desc limit %d", m.table, latestRecordCountView*2)
+	var projectRecords []*ProjectRecord
+	if err := db.Select(&projectRecords, sqlStr); err != nil {
+		slog.Error("get project record error ", "sql", sqlStr, "err ", err.Error())
 		return nil, err
 	}
 	return projectRecords, nil

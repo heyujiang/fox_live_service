@@ -184,6 +184,13 @@ type (
 		Id   int    `json:"value"`
 		Name string `json:"label"`
 	}
+
+	RespProjectViewCount struct {
+		TotalCount        int     `json:"totalCount"`
+		TotalCapacity     float64 `json:"totalCapacity"`
+		MonthAddCount     int     `json:"monthAddCount"`
+		ThreeStartProject int     `json:"threeStartProject"`
+	}
 )
 
 func newBisLogic() *bisLogic {
@@ -503,9 +510,15 @@ func (b *bisLogic) Info(req *ReqInfoProject) (*RespInfoProject, error) {
 	return res, nil
 }
 
-func (b *bisLogic) List(req *ReqProjectList) (*RespProjectList, error) {
+func (b *bisLogic) List(req *ReqProjectList, uid int) (*RespProjectList, error) {
 	logic.VerifyReqPage(&req.ReqPage)
-	cond := b.buildSearchCond(req)
+
+	projectIds, err := b.getMyProjectIds(uid)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
+	}
+
+	cond := b.buildSearchCond(req, projectIds)
 	totalCount, err := model.ProjectModel.GetProjectCountByCond(cond)
 	if err != nil {
 		slog.Error("list project get user count error", "err", err.Error())
@@ -551,8 +564,10 @@ func (b *bisLogic) List(req *ReqProjectList) (*RespProjectList, error) {
 	}, nil
 }
 
-func (b *bisLogic) buildSearchCond(req *ReqProjectList) *model.ProjectCond {
+func (b *bisLogic) buildSearchCond(req *ReqProjectList, projectIds []int) *model.ProjectCond {
 	cond := &model.ProjectCond{}
+
+	cond.Ids = projectIds
 
 	if req.Name != "" {
 		cond.Name = req.Name
@@ -589,6 +604,94 @@ func (b *bisLogic) Option(req *ReqProjectOption) ([]*RespProjectOption, error) {
 			Id:   v.Id,
 			Name: v.Name,
 		})
+	}
+
+	return res, nil
+}
+
+func (b *bisLogic) getMyProjectIds(uid int) ([]int, error) {
+	//查询用户的项目
+	// 判断用户角色
+	projectPerson, err := model.ProjectPersonModel.SelectByUserId(uid)
+	if err != nil {
+		slog.Error("get user has project list error", "err", err.Error())
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取项目列表错误")
+	}
+	projectIds := make([]int, 0, len(projectPerson))
+	for _, person := range projectPerson {
+		projectIds = append(projectIds, person.ProjectId)
+	}
+	return projectIds, nil
+}
+
+func (b *bisLogic) GetMyProject(uid int) ([]*ListProjectItem, error) {
+	projectIds, err := b.getMyProjectIds(uid)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
+	}
+	if len(projectIds) == 0 {
+		return []*ListProjectItem{}, nil
+	}
+
+	projects, err := model.ProjectModel.SelectByIds(projectIds)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询我的项目出错")
+	}
+
+	res := make([]*ListProjectItem, 0, len(projects))
+	for _, v := range projects {
+		res = append(res, &ListProjectItem{
+			Id:                  v.Id,
+			Name:                v.Name,
+			Attr:                v.Attr,
+			State:               v.State,
+			Type:                v.Type,
+			NodeName:            v.NodeName,
+			Schedule:            v.Schedule,
+			Capacity:            v.Capacity,
+			Properties:          v.Properties,
+			Area:                v.Area,
+			Description:         v.Description,
+			Address:             v.Address,
+			Connect:             v.Connect,
+			Star:                v.Star,
+			Username:            v.Username,
+			InvestmentAgreement: v.InvestmentAgreement,
+			BusinessCondition:   v.BusinessCondition,
+			BeginTime:           v.BeginTime.Format(global.DateFormat),
+			CreatedAt:           v.CreatedAt.Format(global.TimeFormat),
+			UpdatedAt:           v.UpdatedAt.Format(global.TimeFormat),
+		})
+	}
+	return res, nil
+}
+
+func (b *bisLogic) ViewCount() (*RespProjectViewCount, error) {
+	projects, err := model.ProjectModel.Select()
+	if err != nil {
+		slog.Error("get project list error", "err", err.Error())
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目数据出错")
+	}
+
+	res := &RespProjectViewCount{
+		TotalCount:        len(projects),
+		TotalCapacity:     0.00,
+		MonthAddCount:     0,
+		ThreeStartProject: 0,
+	}
+
+	now := time.Now()
+	monthTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	fmt.Println(fmt.Sprintf("month begin : %v", monthTime))
+	for _, v := range projects {
+		res.TotalCapacity += v.Capacity
+		if v.Star == 3 {
+			res.ThreeStartProject++
+		}
+
+		if v.CreatedAt.After(monthTime) {
+			res.MonthAddCount++
+		}
 	}
 
 	return res, nil

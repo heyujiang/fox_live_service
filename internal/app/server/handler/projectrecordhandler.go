@@ -126,3 +126,14 @@ func (h *projectRecordHandler) ListNoPage(c *gin.Context) {
 	common.ResponseOK(c, res)
 	return
 }
+
+func (h *projectRecordHandler) GetLatestRecords(c *gin.Context) {
+	res, err := project.RecordLogic.GetLatestRecords(c.GetInt("uid"))
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+
+	common.ResponseOK(c, res)
+	return
+}

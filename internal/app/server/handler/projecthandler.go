@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"fox_live_service/internal/app/server/logic/project"
 	"fox_live_service/pkg/common"
 	"fox_live_service/pkg/errorx"
@@ -100,7 +101,7 @@ func (h *projectHandler) List(c *gin.Context) {
 		return
 	}
 
-	res, err := project.BisLogic.List(&req)
+	res, err := project.BisLogic.List(&req, c.GetInt("uid"))
 	if err != nil {
 		common.ResponseErr(c, err)
 		return
@@ -119,6 +120,18 @@ func (h *projectHandler) Option(c *gin.Context) {
 
 	res, err := project.BisLogic.Option(&req)
 	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+
+	common.ResponseOK(c, res)
+	return
+}
+
+func (h *projectHandler) GetMyProject(c *gin.Context) {
+	res, err := project.BisLogic.GetMyProject(c.GetInt("uid"))
+	if err != nil {
+		fmt.Println("err", err)
 		common.ResponseErr(c, err)
 		return
 	}

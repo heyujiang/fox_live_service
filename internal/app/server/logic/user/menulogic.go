@@ -209,7 +209,7 @@ func (m *menuLogic) GetMenus(uid int) ([]*RespMenuListItem, error) {
 			},
 			Component: "LAYOUT",
 			Path:      "/user",
-			Redirect:  "/user/user",
+			Redirect:  "/user/info",
 			Children: []*RespMenuListItem{
 				{
 					Name:      "user_info",
@@ -220,7 +220,7 @@ func (m *menuLogic) GetMenus(uid int) ([]*RespMenuListItem, error) {
 						IgnoreCache:  true,
 						RequiresAuth: true,
 					},
-					Path: "user",
+					Path: "info",
 				},
 				{
 					Name:      "user_weekday",

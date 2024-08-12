@@ -27,4 +27,7 @@ func registerUser(e *gin.Engine) {
 	user.POST("/updateAvatar", handler.UserHandler.UpdateAvatar)     // 修改头像
 	user.POST("/updateBasic", handler.UserHandler.UpdateBasic)       // 修改基础信息
 	user.POST("/updatePassword", handler.UserHandler.UpdatePassword) // 修改密码
+
+	user.GET("/myProjects", handler.ProjectHandler.GetMyProject)
+	user.GET("/myLatestRecords", handler.ProjectRecordHandler.GetLatestRecords)
 }
