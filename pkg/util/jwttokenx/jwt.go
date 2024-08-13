@@ -2,6 +2,7 @@ package jwttokenx
 
 import (
 	"errors"
+	"golang.org/x/exp/slog"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -20,6 +21,7 @@ func GenerateToken(secret string, userId int, username string, expireIn int64, r
 	})
 	token, err := at.SignedString([]byte(secret))
 	if err != nil {
+		slog.Error("generate token failed", slog.String("err", err.Error()))
 		return "", err
 	}
 	return token, nil

@@ -33,7 +33,6 @@ func (h *homeHandler) LatestRecord(c *gin.Context) {
 		common.ResponseErr(c, err)
 		return
 	}
-
 	common.ResponseOK(c, res)
 	return
 }

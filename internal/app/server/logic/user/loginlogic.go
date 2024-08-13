@@ -59,7 +59,7 @@ func (l loginLogic) Login(req *ReqLogin, jwtTokenKey string) (*RespLogin, error)
 	// 生成最终token
 	token, err := jwttokenx.GenerateToken(jwtTokenKey, user.Id, user.Username, 1*24*60*60, 6*24*60*60)
 	if err != nil {
-		return nil, err
+		return nil, errorx.NewErrorX(errorx.ErrUserNotExist, "登录出错")
 	}
 
 	//生成TOKEN
