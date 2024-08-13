@@ -1,6 +1,7 @@
 package user
 
 import (
+	"errors"
 	"fox_live_service/config/global"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
@@ -53,6 +54,9 @@ func (a *accountLogic) UserInfo(uid int) (*RespAccountUserInfo, error) {
 	user, err := model.UserModel.Find(uid)
 	if err != nil {
 		slog.Error("get account user info error ： ", "uid", uid, "err", err)
+		if errors.Is(err, model.ErrNotRecord) {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "账户不存在")
+		}
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取账户信息失败")
 	}
 

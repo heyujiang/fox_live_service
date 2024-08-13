@@ -180,7 +180,11 @@ func (u *userHandler) Menus(c *gin.Context) {
 }
 
 func (u *userHandler) GetUserInfo(c *gin.Context) {
-	res, _ := user.AccountLogic.UserInfo(c.GetInt("uid"))
+	res, err := user.AccountLogic.UserInfo(c.GetInt("uid"))
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
 	common.ResponseOK(c, res)
 	return
 }
@@ -197,7 +201,12 @@ func (u *userHandler) UpdateBasic(c *gin.Context) {
 		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
 		return
 	}
-	res, _ := user.AccountLogic.UpdateBasic(&req, c.GetInt("uid"))
+	res, err := user.AccountLogic.UpdateBasic(&req, c.GetInt("uid"))
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+
 	common.ResponseOK(c, res)
 	return
 }
@@ -208,7 +217,12 @@ func (u *userHandler) UpdateAvatar(c *gin.Context) {
 		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
 		return
 	}
-	res, _ := user.AccountLogic.UpdateAvatar(&req, c.GetInt("uid"))
+	res, err := user.AccountLogic.UpdateAvatar(&req, c.GetInt("uid"))
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+
 	common.ResponseOK(c, res)
 	return
 }
@@ -219,7 +233,12 @@ func (u *userHandler) UpdatePassword(c *gin.Context) {
 		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
 		return
 	}
-	res, _ := user.AccountLogic.UpdatePassword(&req, c.GetInt("uid"))
+	res, err := user.AccountLogic.UpdatePassword(&req, c.GetInt("uid"))
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+
 	common.ResponseOK(c, res)
 	return
 }
