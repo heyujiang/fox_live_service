@@ -47,7 +47,7 @@ create table role (
 
 create table dept (
       id int unsigned primary key auto_increment ,
-      name varchar(100) not null default '' comment '菜单名称',
+      title varchar(100) not null default '' comment '菜单名称',
       remark varchar(255) not null default '' comment '备注',
       status tinyint unsigned not null default 0 comment '状态',
       pid int unsigned not null default 0 comment 'pid',

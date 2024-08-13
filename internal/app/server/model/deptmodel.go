@@ -16,7 +16,7 @@ const (
 )
 
 const (
-	insertDeptStr = "`name` , `pid` , `status`, `remark`, `order` , `created_id`, `updated_id` "
+	insertDeptStr = "`title` , `pid` , `status`, `remark`, `order` , `created_id`, `updated_id` "
 )
 
 var (
@@ -26,7 +26,7 @@ var (
 type (
 	Dept struct {
 		Id        int       `db:"id"`
-		Name      string    `db:"name"`
+		Title     string    `db:"title"`
 		Pid       int       `db:"pid"`
 		Status    int       `db:"status"`
 		Remark    string    `db:"remark"`
@@ -50,7 +50,7 @@ func newDeptModel() *deptModel {
 
 func (m *deptModel) Create(dept *Dept) error {
 	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?)", m.table, insertDeptStr)
-	res, err := db.Exec(sqlStr, dept.Name, dept.Pid, dept.Status, dept.Remark, dept.Order, dept.CreatedId, dept.UpdatedId)
+	res, err := db.Exec(sqlStr, dept.Title, dept.Pid, dept.Status, dept.Remark, dept.Order, dept.CreatedId, dept.UpdatedId)
 	if err != nil {
 		slog.Error("insert dept err ", "sql", sqlStr, "err ", err.Error())
 		return err
@@ -71,8 +71,8 @@ func (m *deptModel) Delete(id int) error {
 }
 
 func (m *deptModel) Update(dept *Dept) error {
-	sqlStr := fmt.Sprintf("update %s set `name` = ?, `pid` = ? , `remark` = ?, `order` = ? ,updated_id = ? where `id` = %d", m.table, dept.Id)
-	_, err := db.Exec(sqlStr, dept.Name, dept.Pid, dept.Remark, dept.Order, dept.UpdatedId)
+	sqlStr := fmt.Sprintf("update %s set `title` = ?, `pid` = ? , `remark` = ?, `order` = ? ,updated_id = ? where `id` = %d", m.table, dept.Id)
+	_, err := db.Exec(sqlStr, dept.Title, dept.Pid, dept.Remark, dept.Order, dept.UpdatedId)
 	if err != nil {
 		slog.Error("update dept err ", "sql", sqlStr, "err ", err.Error())
 		return err
