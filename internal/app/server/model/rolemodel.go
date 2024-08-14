@@ -16,7 +16,8 @@ const (
 )
 
 const (
-	insertRoleStr = "`title` , `pid` , `status`, `remark`, `rule_ids` ,  `created_id`, `updated_id` "
+	SuperManagerRoleId = 1
+	insertRoleStr      = "`title` , `pid` , `status`, `remark`, `rule_ids` ,  `created_id`, `updated_id` "
 )
 
 var (

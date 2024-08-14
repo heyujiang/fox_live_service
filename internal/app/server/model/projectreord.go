@@ -180,3 +180,13 @@ func (m *projectRecordModel) Select() ([]*ProjectRecord, error) {
 	}
 	return projectRecords, nil
 }
+
+func (m *projectRecordModel) SelectProjectIdFromCreatedAt(at *time.Time) ([]int, error) {
+	sqlStr := fmt.Sprintf("select `project_id` from %s where created_at > ? group by `project_id` ", m.table)
+	var projectIds []int
+	if err := db.Select(&projectIds, sqlStr, at); err != nil {
+		slog.Error("get project ids from created at error ", "sql", sqlStr, "at", at, "err ", err.Error())
+		return nil, err
+	}
+	return projectIds, nil
+}

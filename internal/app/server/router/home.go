@@ -11,4 +11,6 @@ func registerHome(e *gin.Engine) {
 
 	home.GET("/viewCount", handler.HomeHandler.ViewCount)
 	home.GET("/latestRecord", handler.HomeHandler.LatestRecord)
+	home.GET("/latestProject", handler.HomeHandler.LatestProject)
+	home.GET("/personCapacity", handler.HomeHandler.PersonCapacity)
 }

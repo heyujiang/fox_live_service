@@ -8,8 +8,10 @@ import (
 	"fox_live_service/internal/app/server/logic/node"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
+	"github.com/spf13/cast"
 	"golang.org/x/exp/slog"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -190,6 +192,17 @@ type (
 		TotalCapacity     float64 `json:"totalCapacity"`
 		MonthAddCount     int     `json:"monthAddCount"`
 		ThreeStartProject int     `json:"threeStartProject"`
+	}
+
+	ReqGetLatestProject struct {
+		Type   string `form:"type"`
+		Latest string `form:"latest"`
+	}
+
+	RespPersonCapacityItem struct {
+		UserId   int     `json:"userId"`
+		Username string  `json:"username"`
+		Capacity float64 `json:"capacity"`
 	}
 )
 
@@ -611,6 +624,19 @@ func (b *bisLogic) Option(req *ReqProjectOption) ([]*RespProjectOption, error) {
 
 func (b *bisLogic) getMyProjectIds(uid int) ([]int, error) {
 	//查询用户的项目
+	user, err := model.UserModel.Find(uid)
+	if err != nil {
+		slog.Error("get user info error", "err", err.Error())
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户信息错误")
+	}
+
+	roleIds := cast.ToIntSlice(strings.Split(user.RoleIds, ","))
+	for _, roleId := range roleIds {
+		if roleId == model.SuperManagerRoleId {
+			return []int{}, nil
+		}
+	}
+
 	// 判断用户角色
 	projectPerson, err := model.ProjectPersonModel.SelectByUserId(uid)
 	if err != nil {
@@ -692,6 +718,104 @@ func (b *bisLogic) ViewCount() (*RespProjectViewCount, error) {
 		if v.CreatedAt.After(monthTime) {
 			res.MonthAddCount++
 		}
+	}
+
+	return res, nil
+}
+
+func (b *bisLogic) GetLatestProject(req *ReqGetLatestProject) ([]*ListProjectItem, error) {
+	beginTime := time.Now()
+	if req.Latest == "month" {
+		beginTime = beginTime.AddDate(0, -1, 0)
+	} else {
+		beginTime = beginTime.AddDate(0, 0, -7)
+	}
+	fmt.Println(fmt.Sprintf("begintime : %+v ; type : %s ", beginTime, req.Latest))
+	var notExistIds, existIds, star = make([]int, 0), make([]int, 0), 0
+
+	if req.Type == "threeStar" {
+		star = 3
+	} else {
+		projectIds, err := model.ProjectRecordModel.SelectProjectIdFromCreatedAt(&beginTime)
+		if err != nil {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "数据查询出错")
+		}
+		if req.Type == "noProgress" {
+			notExistIds = projectIds
+		} else {
+			existIds = projectIds
+		}
+		beginTime = time.Unix(0, 0)
+	}
+
+	projects, err := model.ProjectModel.SelectLatestProject(&beginTime, notExistIds, existIds, star)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "数据查询出错")
+	}
+
+	res := make([]*ListProjectItem, 0, len(projects))
+	for _, v := range projects {
+		res = append(res, &ListProjectItem{
+			Id:                  v.Id,
+			Name:                v.Name,
+			Attr:                v.Attr,
+			State:               v.State,
+			Type:                v.Type,
+			NodeName:            v.NodeName,
+			Schedule:            v.Schedule,
+			Capacity:            v.Capacity,
+			Properties:          v.Properties,
+			Area:                v.Area,
+			Description:         v.Description,
+			Address:             v.Address,
+			Connect:             v.Connect,
+			Star:                v.Star,
+			Username:            v.Username,
+			InvestmentAgreement: v.InvestmentAgreement,
+			BusinessCondition:   v.BusinessCondition,
+			BeginTime:           v.BeginTime.Format(global.DateFormat),
+			CreatedAt:           v.CreatedAt.Format(global.TimeFormat),
+			UpdatedAt:           v.UpdatedAt.Format(global.TimeFormat),
+		})
+	}
+	return res, nil
+}
+
+func (b *bisLogic) PersonCapacity() ([]*RespPersonCapacityItem, error) {
+	projects, err := model.ProjectModel.Select()
+	if err != nil {
+		slog.Error("get project list error", "err", err.Error())
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "获得用户容量数据出错")
+	}
+
+	projectCap := make(map[int]float64, len(projects))
+	projectIds := make([]int, 0)
+	for _, v := range projects {
+		projectCap[v.Id] += v.Capacity
+		projectIds = append(projectIds, v.Id)
+	}
+
+	fmt.Println(fmt.Sprintf("%+v", projectCap))
+
+	projectPersons, err := model.ProjectPersonModel.SelectByProjectIds(projectIds)
+
+	resMap := make(map[int]*RespPersonCapacityItem)
+	for _, v := range projectPersons {
+		fmt.Println(fmt.Sprintf("username : %s , project_id : %d", v.Name, v.ProjectId))
+		if _, ok := resMap[v.UserId]; !ok {
+			resMap[v.UserId] = &RespPersonCapacityItem{
+				UserId:   v.UserId,
+				Username: v.Name,
+				Capacity: 0,
+			}
+		}
+
+		resMap[v.UserId].Capacity += projectCap[v.ProjectId]
+	}
+	res := make([]*RespPersonCapacityItem, 0, len(resMap))
+
+	for _, v := range resMap {
+		res = append(res, v)
 	}
 
 	return res, nil

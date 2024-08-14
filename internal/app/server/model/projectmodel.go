@@ -278,3 +278,46 @@ func (m *projectModel) SelectByIds(ids []int) ([]*Project, error) {
 	}
 	return projects, nil
 }
+
+func (m *projectModel) SelectLatestProject(beginTime *time.Time, notExistIds, existIds []int, star int) ([]*Project, error) {
+	args := make([]interface{}, 0)
+	sqlStr := " and created_at > ? "
+	args = append(args, ProjectDeletedNo, beginTime)
+
+	if star == 3 {
+		sqlStr += " and star = ? "
+		args = append(args, star)
+	}
+
+	if len(notExistIds) > 0 {
+		notInStr := strings.TrimRight(strings.Repeat("?,", len(notExistIds)), ",")
+		sqlStr += " and id not in ( " + notInStr + " ) "
+
+		notIds := make([]interface{}, 0)
+		for _, id := range notExistIds {
+			notIds = append(notIds, id)
+		}
+		args = append(args, notIds...)
+	}
+
+	if len(existIds) > 0 {
+		notInStr := strings.TrimRight(strings.Repeat("?,", len(existIds)), ",")
+		sqlStr += " and id in ( " + notInStr + " ) "
+
+		notIds := make([]interface{}, 0)
+		for _, id := range existIds {
+			notIds = append(notIds, id)
+		}
+		args = append(args, notIds...)
+	}
+
+	query := fmt.Sprintf("select * from %s where `is_deleted` = ? %s ", m.table, sqlStr)
+	slog.Info("select my project by ids error", "sql", query, "sqlStr", sqlStr, "args", args)
+
+	projects := make([]*Project, 0)
+	if err := db.Select(&projects, query, args...); err != nil {
+		slog.Error("select my project by ids error", "sql", query, "sqlStr", sqlStr, "args", args, "err ", err.Error())
+		return projects, err
+	}
+	return projects, nil
+}
