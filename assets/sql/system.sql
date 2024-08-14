@@ -29,8 +29,6 @@ create table rule (
 )  engine = innodb comment 'rule';
 
 
-drop table role;
-
 create table role (
       id int unsigned primary key auto_increment ,
       title varchar(100) not null default '' comment '菜单名称',

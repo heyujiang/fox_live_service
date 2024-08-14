@@ -38,8 +38,8 @@ func Register() *gin.Engine {
 	}
 	e.Use(gin.Recovery(), gin.LoggerWithConfig(c), middleware.Cors())
 
-	e.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, "Welcome to fox...")
+	e.GET("/api", func(c *gin.Context) {
+		c.String(http.StatusOK, "Welcome to jhny manage service")
 	})
 
 	registerStaticRouters(e)
