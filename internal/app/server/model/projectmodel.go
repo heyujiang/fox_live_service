@@ -212,7 +212,7 @@ func (m *projectModel) buildProjectCond(cond *ProjectCond) (sqlCond string, args
 	}
 
 	if len(cond.Ids) > 0 {
-		sqlCond += fmt.Sprintf("and id in (%s)", strings.Repeat(",?", len(cond.Ids))[1:])
+		sqlCond += fmt.Sprintf(" and id in (%s) ", strings.Repeat(",?", len(cond.Ids))[1:])
 		argIds := make([]interface{}, 0, len(cond.Ids))
 		for _, id := range cond.Ids {
 			argIds = append(argIds, id)
@@ -221,7 +221,7 @@ func (m *projectModel) buildProjectCond(cond *ProjectCond) (sqlCond string, args
 	}
 
 	if cond.UserId > 0 {
-		sqlCond += "and user_id = ?"
+		sqlCond += " and user_id = ?"
 		args = append(args, cond.UserId)
 	}
 

@@ -8,8 +8,10 @@ import (
 	"fox_live_service/internal/app/server/logic/node"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
+	"github.com/spf13/cast"
 	"golang.org/x/exp/slog"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -530,6 +532,7 @@ func (b *bisLogic) List(req *ReqProjectList, uid int) (*RespProjectList, error) 
 	}
 
 	cond := b.buildSearchCond(req, projectIds)
+	fmt.Println(fmt.Sprintf("cond : %+v ", cond))
 	totalCount, err := model.ProjectModel.GetProjectCountByCond(cond)
 	if err != nil {
 		slog.Error("list project get user count error", "err", err.Error())
@@ -578,7 +581,9 @@ func (b *bisLogic) List(req *ReqProjectList, uid int) (*RespProjectList, error) 
 func (b *bisLogic) buildSearchCond(req *ReqProjectList, projectIds []int) *model.ProjectCond {
 	cond := &model.ProjectCond{}
 
-	cond.Ids = projectIds
+	if len(projectIds) > 0 {
+		cond.Ids = projectIds
+	}
 
 	if req.Name != "" {
 		cond.Name = req.Name
@@ -622,20 +627,19 @@ func (b *bisLogic) Option(req *ReqProjectOption) ([]*RespProjectOption, error) {
 
 func (b *bisLogic) GetMyProjectIds(uid int) ([]int, error) {
 	//查询用户的项目
-	_, err := model.UserModel.Find(uid)
+	user, err := model.UserModel.Find(uid)
 	if err != nil {
 		slog.Error("get user info error", "err", err.Error())
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户信息错误")
 	}
 
-	//roleIds := cast.ToIntSlice(strings.Split(user.RoleIds, ","))
-	//for _, roleId := range roleIds {
-	//	if roleId == model.SuperManagerRoleId {
-	//		return []int{}, nil
-	//	}
-	//}
+	roleIds := cast.ToIntSlice(strings.Split(user.RoleIds, ","))
+	for _, roleId := range roleIds {
+		if roleId == model.SuperManagerRoleId {
+			return []int{}, nil
+		}
+	}
 
-	// 判断用户角色
 	projectPerson, err := model.ProjectPersonModel.SelectByUserId(uid)
 	if err != nil {
 		slog.Error("get user has project list error", "err", err.Error())
@@ -644,6 +648,10 @@ func (b *bisLogic) GetMyProjectIds(uid int) ([]int, error) {
 	projectIds := make([]int, 0, len(projectPerson))
 	for _, person := range projectPerson {
 		projectIds = append(projectIds, person.ProjectId)
+	}
+
+	if len(projectIds) == 0 {
+		projectIds = append(projectIds, -1)
 	}
 	return projectIds, nil
 }

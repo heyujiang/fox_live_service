@@ -60,6 +60,7 @@ type (
 	}
 
 	ReqFromProjectRecordList struct {
+		Id        int `form:"id"`
 		ProjectId int `form:"projectId"`
 		NodeId    int `form:"nodeId"`
 		UserId    int `form:"userId"`
@@ -279,6 +280,10 @@ func (b *recordLogic) ListNoPage(req *ReqProjectRecordList) ([]*ListProjectRecor
 
 func (b *recordLogic) buildSearchCond(req *ReqProjectRecordList) *model.ProjectRecordCond {
 	cond := &model.ProjectRecordCond{}
+
+	if req.Id > 0 {
+		cond.Id = req.Id
+	}
 
 	if req.ProjectId > 0 {
 		cond.ProjectId = req.ProjectId
