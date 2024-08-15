@@ -178,7 +178,9 @@ func (n *nodeLogic) List(req *ReqProjectNodeList) ([]*RespProjectNodeItem, error
 			})
 		}
 
-		progress, _ = strconv.ParseFloat(fmt.Sprintf("%.2f", nodeFinishedTotal/nodeTotal), 64)
+		if nodeTotal > 0 {
+			progress, _ = strconv.ParseFloat(fmt.Sprintf("%.2f", nodeFinishedTotal/nodeTotal), 64)
+		}
 
 		res = append(res, &RespProjectNodeItem{
 			Id:            node.Id,

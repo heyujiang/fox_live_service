@@ -1,4 +1,3 @@
-drop table user;
 create table user (
   id int unsigned not null auto_increment primary key ,
   username varchar(100) not null default '' comment 'username',
@@ -16,6 +15,5 @@ create table user (
   created_at timestamp not null default current_timestamp comment '创建时间',
   updated_at timestamp not null default current_timestamp on update current_timestamp comment '编辑时间',
   unique key `idx_username` (username),
-  unique key `uk_phone_number` (`phone_number`),
-  unique key `uk_email` (`email`)
+  unique key `uk_phone_number` (`phone_number`)
 ) engine = innodb comment 'USER';

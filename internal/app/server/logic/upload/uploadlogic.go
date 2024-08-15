@@ -45,11 +45,11 @@ const (
 
 var (
 	Mime2Suffix = map[string]string{
-		"image/jpeg":                  ".jpg",
-		"image/png":                   ".png",
-		"image/gif":                   ".gif",
-		"image/bmp":                   ".bmp",
-		"image/webp":                  ".webp",
+		"image/jpeg":                  "jpg",
+		"image/png":                   "png",
+		"image/gif":                   "gif",
+		"image/bmp":                   "bmp",
+		"image/webp":                  "webp",
 		"application/pdf":             "pdf",
 		"application/zip":             "zip",
 		"application/vnd.rar":         "rar",
@@ -132,7 +132,7 @@ func (b *bisLogic) Upload(c *gin.Context, req *ReqFileUpload, uid int) (*RespFil
 		slog.Error("upload file error", "err", err)
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "上传文件出错")
 	}
-	url := fmt.Sprintf("http://%s:%d/%s", global.Config.GetString("Host"), global.Config.GetInt("Port"), fileSavePath)
+	url := fmt.Sprintf("http://%s/%s", global.Config.GetString("Domain"), fileSavePath)
 	if err := model.FileModel.Insert(&model.File{
 		Type:      req.Type,
 		Url:       url,

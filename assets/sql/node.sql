@@ -1,4 +1,3 @@
-drop table node;
 create table node (
     id int unsigned not null auto_increment primary key comment 'id',
     name varchar(255) not null default '' comment '节点名称',
