@@ -9,6 +9,13 @@ import (
 	"time"
 )
 
+type (
+	UserCountItem struct {
+		UserId int `db:"user_id"`
+		Count  int `db:"count"`
+	}
+)
+
 var db *sqlx.DB
 var dbType = "mysql"
 

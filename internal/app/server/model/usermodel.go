@@ -113,9 +113,9 @@ func (m *userModel) Find(id int) (*User, error) {
 
 // Select 查询所有数据
 func (m *userModel) Select() ([]*User, error) {
-	sqlStr := fmt.Sprintf("select * from %s", m.table)
+	sqlStr := fmt.Sprintf("select * from %s where `state` = ?", m.table)
 	var users []*User
-	if err := db.Select(&users, sqlStr); err != nil {
+	if err := db.Select(&users, sqlStr, UserStatusEnable); err != nil {
 		slog.Error("select user err ", "sql", sqlStr, "err ", err.Error())
 		return nil, err
 	}

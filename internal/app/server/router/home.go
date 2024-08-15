@@ -13,4 +13,5 @@ func registerHome(e *gin.Engine) {
 	home.GET("/latestRecord", handler.HomeHandler.LatestRecord)
 	home.GET("/latestProject", handler.HomeHandler.LatestProject)
 	home.GET("/personCapacity", handler.HomeHandler.PersonCapacity)
+	home.GET("/userData", handler.HomeHandler.UserData)
 }

@@ -820,3 +820,11 @@ func (b *bisLogic) PersonCapacity() ([]*RespPersonCapacityItem, error) {
 
 	return res, nil
 }
+
+func (b *bisLogic) ProjectData() error {
+	//查询所有项目
+
+	//查询所有员工
+
+	return nil
+}

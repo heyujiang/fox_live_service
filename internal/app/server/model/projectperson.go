@@ -162,3 +162,23 @@ func (m *projectPersonModel) SelectByProjectIds(projectIds []int) ([]*ProjectPer
 	}
 	return projectPersons, nil
 }
+
+func (m *projectPersonModel) SelectGroupCountByUserIds(userIds []int) ([]*UserCountItem, error) {
+	items := make([]*UserCountItem, 0)
+	if len(userIds) == 0 {
+		return items, nil
+	}
+
+	sqlStr := fmt.Sprintf("select `user_id`,count(*) as `count` from %s where user_id in (?) group by user_id ", m.table)
+	query, args, err := sqlx.In(sqlStr, userIds)
+	if err != nil {
+		slog.Error("get project record error ", "sql", sqlStr, "err", err.Error())
+		return nil, err
+	}
+
+	if err := db.Select(&items, query, args...); err != nil {
+		slog.Error("get project record error ", "sql", sqlStr, "err", err.Error())
+		return nil, err
+	}
+	return items, nil
+}
