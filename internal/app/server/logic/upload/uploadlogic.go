@@ -163,7 +163,6 @@ func (b *bisLogic) filter(req *ReqFileUpload) error {
 		return errorx.NewErrorX(errorx.ErrCommon, "文件大小超出限制")
 	}
 	fileMime := req.File.Header.Get("Content-Type")
-	fmt.Println("file mime is ", fileMime)
 	_, ok = filter.Mime[fileMime]
 	if !ok {
 		return errorx.NewErrorX(errorx.ErrCommon, "不支持的文件格式")

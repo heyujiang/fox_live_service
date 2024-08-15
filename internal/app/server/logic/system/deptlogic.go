@@ -2,7 +2,6 @@ package system
 
 import (
 	"errors"
-	"fmt"
 	"fox_live_service/config/global"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
@@ -151,7 +150,6 @@ func (r *deptLogic) List() ([]*RespDeptListItem, error) {
 	deptMap := make(map[int][]*RespDeptListItem)
 	deptMap[0] = []*RespDeptListItem{}
 	for _, dept := range depts {
-		fmt.Println(fmt.Sprintf("%+v", dept))
 		if _, ok := deptMap[dept.Pid]; !ok {
 			deptMap[dept.Pid] = make([]*RespDeptListItem, 0)
 		}

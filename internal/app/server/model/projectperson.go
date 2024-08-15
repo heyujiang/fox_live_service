@@ -149,7 +149,7 @@ func (m *projectPersonModel) SelectByProjectIds(projectIds []int) ([]*ProjectPer
 		return projectPersons, nil
 	}
 
-	sqlStr := fmt.Sprintf("select * from %s where `type` = ? and id in (?) order by created_at desc", m.table)
+	sqlStr := fmt.Sprintf("select * from %s where `type` = ? and `project_id` in (?) order by created_at desc", m.table)
 	query, args, err := sqlx.In(sqlStr, ProjectPersonTypeFirst, projectIds)
 	if err != nil {
 		slog.Error("select  project person by projectIds error", "sql", sqlStr, "projectIds", projectIds, "err ", err.Error())
@@ -181,4 +181,24 @@ func (m *projectPersonModel) SelectGroupCountByUserIds(userIds []int) ([]*UserCo
 		return nil, err
 	}
 	return items, nil
+}
+
+func (m *projectPersonModel) SelectAllByProjectIds(projectIds []int) ([]*ProjectPerson, error) {
+	projectPersons := make([]*ProjectPerson, 0)
+	if len(projectIds) == 0 {
+		return projectPersons, nil
+	}
+
+	sqlStr := fmt.Sprintf("select * from %s where  `project_id` in (?) order by created_at desc", m.table)
+	query, args, err := sqlx.In(sqlStr, projectIds)
+	if err != nil {
+		slog.Error("select  project person by projectIds error", "sql", sqlStr, "projectIds", projectIds, "err ", err.Error())
+		return nil, err
+	}
+
+	if err := db.Select(&projectPersons, query, args...); err != nil {
+		slog.Error("select  project person by projectIds error", "sql", sqlStr, "projectIds", projectIds, "err ", err.Error())
+		return nil, err
+	}
+	return projectPersons, nil
 }

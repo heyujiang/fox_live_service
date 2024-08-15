@@ -85,6 +85,32 @@ type (
 		CreatedAt   string `json:"createdAt"`
 		UpdatedAt   string `json:"updatedAt"`
 	}
+
+	ProjectRecordAdnUserInfoItem struct {
+		Id          int    `json:"id"`
+		ProjectId   int    `json:"projectId"`
+		ProjectName string `json:"projectName"`
+		NodeId      int    `json:"nodeId"`
+		NodeName    string `json:"nodeName"`
+		UserId      int    `json:"userId"`
+		Username    string `json:"username"`
+		Overview    string `json:"overview"`
+		State       int    `json:"state"`
+		Avatar      string `json:"avatar"`
+		CreatedAt   string `json:"createdAt"`
+		UpdatedAt   string `json:"updatedAt"`
+	}
+
+	RespTeam struct {
+		Count  int         `json:"count"`
+		Member []*TeamUser `json:"member"`
+	}
+
+	TeamUser struct {
+		UserId   int    `json:"userId"`
+		Username string `json:"username"`
+		Avatar   string `json:"avatar"`
+	}
 )
 
 func newRecordLogic() *recordLogic {
@@ -273,16 +299,37 @@ func (b *recordLogic) buildSearchCond(req *ReqProjectRecordList) *model.ProjectR
 	return cond
 }
 
-func (b *recordLogic) GetLatestRecords(uid int) ([]*ListProjectRecordItem, error) {
-	records, err := model.ProjectRecordModel.SelectByUserId(uid)
+func (b *recordLogic) GetLatestRecords(uid int) ([]*ProjectRecordAdnUserInfoItem, error) {
+	projects, err := model.ProjectPersonModel.SelectByUserId(uid)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询最近提交记录出错")
 	}
 
-	res := make([]*ListProjectRecordItem, 0, len(records))
+	projectIds := make([]int, 0, len(projects))
+	for _, proj := range projects {
+		projectIds = append(projectIds, proj.ProjectId)
+	}
+
+	records, err := model.ProjectRecordModel.SelectByProjectIds(projectIds)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询最近提交记录出错")
+	}
+	userIds := make([]int, 0, len(records))
+	for _, v := range records {
+		userIds = append(userIds, v.UserId)
+	}
+	users, err := model.UserModel.SelectByIds(userIds)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询最近提交记录出错")
+	}
+	avatarMap := make(map[int]string, len(users))
+	for _, v := range users {
+		avatarMap[v.Id] = v.Avatar
+	}
+	res := make([]*ProjectRecordAdnUserInfoItem, 0, len(records))
 
 	for _, v := range records {
-		res = append(res, &ListProjectRecordItem{
+		res = append(res, &ProjectRecordAdnUserInfoItem{
 			Id:          v.Id,
 			ProjectId:   v.ProjectId,
 			ProjectName: v.ProjectName,
@@ -292,6 +339,7 @@ func (b *recordLogic) GetLatestRecords(uid int) ([]*ListProjectRecordItem, error
 			Username:    v.Username,
 			Overview:    v.Overview,
 			State:       v.State,
+			Avatar:      avatarMap[v.UserId],
 			CreatedAt:   v.CreatedAt.Format(global.TimeFormat),
 			UpdatedAt:   v.UpdatedAt.Format(global.TimeFormat),
 		})
@@ -322,6 +370,61 @@ func (b *recordLogic) GetAllLatestRecords() ([]*ListProjectRecordItem, error) {
 			CreatedAt:   v.CreatedAt.Format(global.TimeFormat),
 			UpdatedAt:   v.UpdatedAt.Format(global.TimeFormat),
 		})
+	}
+
+	return res, nil
+}
+
+func (b *recordLogic) GetTeams(uid int) ([]*RespTeam, error) {
+	projects, err := model.ProjectPersonModel.SelectByUserId(uid)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询团队出错")
+	}
+
+	projectIds := make([]int, 0, len(projects))
+	for _, proj := range projects {
+		projectIds = append(projectIds, proj.ProjectId)
+	}
+
+	projectPersons, err := model.ProjectPersonModel.SelectAllByProjectIds(projectIds)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询团队出错")
+	}
+
+	userIds := make([]int, 0, len(projectPersons))
+	for _, v := range projectPersons {
+		userIds = append(userIds, v.UserId)
+	}
+	users, err := model.UserModel.SelectByIds(userIds)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询团队出错")
+	}
+
+	userMap := make(map[int]*model.User, len(users))
+	for _, v := range users {
+		userMap[v.Id] = v
+	}
+
+	var res = make([]*RespTeam, 0)
+
+	var projectTeam = make(map[int]*RespTeam)
+	for _, v := range projectPersons {
+		if _, ok := projectTeam[v.ProjectId]; !ok {
+			projectTeam[v.ProjectId] = &RespTeam{
+				Count:  0,
+				Member: make([]*TeamUser, 0),
+			}
+		}
+		projectTeam[v.ProjectId].Count++
+		projectTeam[v.ProjectId].Member = append(projectTeam[v.ProjectId].Member, &TeamUser{
+			UserId:   userMap[v.UserId].Id,
+			Username: userMap[v.UserId].Username,
+			Avatar:   userMap[v.UserId].Avatar,
+		})
+	}
+
+	for _, v := range projectTeam {
+		res = append(res, v)
 	}
 
 	return res, nil

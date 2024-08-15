@@ -708,7 +708,6 @@ func (b *bisLogic) ViewCount() (*RespProjectViewCount, error) {
 
 	now := time.Now()
 	monthTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	fmt.Println(fmt.Sprintf("month begin : %v", monthTime))
 	for _, v := range projects {
 		res.TotalCapacity += v.Capacity
 		if v.Star == 3 {
@@ -730,7 +729,6 @@ func (b *bisLogic) GetLatestProject(req *ReqGetLatestProject) ([]*ListProjectIte
 	} else {
 		beginTime = beginTime.AddDate(0, 0, -7)
 	}
-	fmt.Println(fmt.Sprintf("begintime : %+v ; type : %s ", beginTime, req.Latest))
 	var notExistIds, existIds, star = make([]int, 0), make([]int, 0), 0
 
 	if req.Type == "threeStar" {
@@ -795,13 +793,10 @@ func (b *bisLogic) PersonCapacity() ([]*RespPersonCapacityItem, error) {
 		projectIds = append(projectIds, v.Id)
 	}
 
-	fmt.Println(fmt.Sprintf("%+v", projectCap))
-
 	projectPersons, err := model.ProjectPersonModel.SelectByProjectIds(projectIds)
 
 	resMap := make(map[int]*RespPersonCapacityItem)
 	for _, v := range projectPersons {
-		fmt.Println(fmt.Sprintf("username : %s , project_id : %d", v.Name, v.ProjectId))
 		if _, ok := resMap[v.UserId]; !ok {
 			resMap[v.UserId] = &RespPersonCapacityItem{
 				UserId:   v.UserId,

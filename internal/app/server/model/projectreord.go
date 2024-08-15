@@ -211,3 +211,35 @@ func (m *projectRecordModel) SelectGroupCountByUserIds(userIds []int) ([]*UserCo
 	}
 	return items, nil
 }
+
+func (m *projectRecordModel) SelectByUserIds(userIds []int) ([]*ProjectRecord, error) {
+	sqlStr := fmt.Sprintf("select * from %s where user_id in (?) order by created_at desc limit %d", m.table, latestRecordCountView)
+	query, args, err := sqlx.In(sqlStr, userIds)
+	if err != nil {
+		slog.Error("get project record error ", "sql", sqlStr, "err", err.Error())
+		return nil, err
+	}
+
+	var projectRecords []*ProjectRecord
+	if err := db.Select(&projectRecords, query, args...); err != nil {
+		slog.Error("get project record error ", "sql", sqlStr, "userIds", userIds, "err ", err.Error())
+		return nil, err
+	}
+	return projectRecords, nil
+}
+
+func (m *projectRecordModel) SelectByProjectIds(projectIds []int) ([]*ProjectRecord, error) {
+	sqlStr := fmt.Sprintf("select * from %s where project_id in (?) order by created_at desc limit %d", m.table, latestRecordCountView)
+	query, args, err := sqlx.In(sqlStr, projectIds)
+	if err != nil {
+		slog.Error("get project record error ", "sql", sqlStr, "err", err.Error())
+		return nil, err
+	}
+
+	var projectRecords []*ProjectRecord
+	if err := db.Select(&projectRecords, query, args...); err != nil {
+		slog.Error("get project record error ", "sql", sqlStr, "userIds", projectIds, "err ", err.Error())
+		return nil, err
+	}
+	return projectRecords, nil
+}
