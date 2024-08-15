@@ -127,7 +127,7 @@ func (m *projectNodeModel) BatchInsert(projectNodes []*ProjectNode) error {
 }
 
 func (m *projectNodeModel) SelectByProjectId(projectId int) ([]*ProjectNode, error) {
-	sqlStr := fmt.Sprintf("select * from %s where `project_id` = ? order by sort asc", m.table)
+	sqlStr := fmt.Sprintf("select * from %s where `project_id` = ? order by sort asc , node_id asc", m.table)
 	projectNodes := make([]*ProjectNode, 0)
 	if err := db.Select(&projectNodes, sqlStr, projectId); err != nil {
 		slog.Error("select project node by project id err ", "sql", sqlStr, "project_id", projectId, "err ", err.Error())
