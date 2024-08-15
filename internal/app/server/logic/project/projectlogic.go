@@ -8,10 +8,8 @@ import (
 	"fox_live_service/internal/app/server/logic/node"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
-	"github.com/spf13/cast"
 	"golang.org/x/exp/slog"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -526,7 +524,7 @@ func (b *bisLogic) Info(req *ReqInfoProject) (*RespInfoProject, error) {
 func (b *bisLogic) List(req *ReqProjectList, uid int) (*RespProjectList, error) {
 	logic.VerifyReqPage(&req.ReqPage)
 
-	projectIds, err := b.getMyProjectIds(uid)
+	projectIds, err := b.GetMyProjectIds(uid)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
 	}
@@ -622,20 +620,20 @@ func (b *bisLogic) Option(req *ReqProjectOption) ([]*RespProjectOption, error) {
 	return res, nil
 }
 
-func (b *bisLogic) getMyProjectIds(uid int) ([]int, error) {
+func (b *bisLogic) GetMyProjectIds(uid int) ([]int, error) {
 	//查询用户的项目
-	user, err := model.UserModel.Find(uid)
+	_, err := model.UserModel.Find(uid)
 	if err != nil {
 		slog.Error("get user info error", "err", err.Error())
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户信息错误")
 	}
 
-	roleIds := cast.ToIntSlice(strings.Split(user.RoleIds, ","))
-	for _, roleId := range roleIds {
-		if roleId == model.SuperManagerRoleId {
-			return []int{}, nil
-		}
-	}
+	//roleIds := cast.ToIntSlice(strings.Split(user.RoleIds, ","))
+	//for _, roleId := range roleIds {
+	//	if roleId == model.SuperManagerRoleId {
+	//		return []int{}, nil
+	//	}
+	//}
 
 	// 判断用户角色
 	projectPerson, err := model.ProjectPersonModel.SelectByUserId(uid)
@@ -651,7 +649,7 @@ func (b *bisLogic) getMyProjectIds(uid int) ([]int, error) {
 }
 
 func (b *bisLogic) GetMyProject(uid int) ([]*ListProjectItem, error) {
-	projectIds, err := b.getMyProjectIds(uid)
+	projectIds, err := b.GetMyProjectIds(uid)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
 	}

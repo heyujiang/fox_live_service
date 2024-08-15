@@ -102,14 +102,10 @@ type (
 	}
 
 	RespTeam struct {
-		Count  int         `json:"count"`
-		Member []*TeamUser `json:"member"`
-	}
-
-	TeamUser struct {
-		UserId   int    `json:"userId"`
-		Username string `json:"username"`
-		Avatar   string `json:"avatar"`
+		UserId      int    `json:"userId"`
+		Username    string `json:"username"`
+		Avatar      string `json:"avatar"`
+		PhoneNumber string `json:"phoneNumber"`
 	}
 )
 
@@ -376,17 +372,12 @@ func (b *recordLogic) GetAllLatestRecords() ([]*ListProjectRecordItem, error) {
 }
 
 func (b *recordLogic) GetTeams(uid int) ([]*RespTeam, error) {
-	projects, err := model.ProjectPersonModel.SelectByUserId(uid)
+	myProjectIds, err := BisLogic.GetMyProjectIds(uid)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询团队出错")
 	}
 
-	projectIds := make([]int, 0, len(projects))
-	for _, proj := range projects {
-		projectIds = append(projectIds, proj.ProjectId)
-	}
-
-	projectPersons, err := model.ProjectPersonModel.SelectAllByProjectIds(projectIds)
+	projectPersons, err := model.ProjectPersonModel.SelectAllByProjectIds(myProjectIds)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询团队出错")
 	}
@@ -400,31 +391,14 @@ func (b *recordLogic) GetTeams(uid int) ([]*RespTeam, error) {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询团队出错")
 	}
 
-	userMap := make(map[int]*model.User, len(users))
+	res := make([]*RespTeam, 0)
 	for _, v := range users {
-		userMap[v.Id] = v
-	}
-
-	var res = make([]*RespTeam, 0)
-
-	var projectTeam = make(map[int]*RespTeam)
-	for _, v := range projectPersons {
-		if _, ok := projectTeam[v.ProjectId]; !ok {
-			projectTeam[v.ProjectId] = &RespTeam{
-				Count:  0,
-				Member: make([]*TeamUser, 0),
-			}
-		}
-		projectTeam[v.ProjectId].Count++
-		projectTeam[v.ProjectId].Member = append(projectTeam[v.ProjectId].Member, &TeamUser{
-			UserId:   userMap[v.UserId].Id,
-			Username: userMap[v.UserId].Username,
-			Avatar:   userMap[v.UserId].Avatar,
+		res = append(res, &RespTeam{
+			UserId:      v.Id,
+			Username:    v.Username,
+			Avatar:      v.Avatar,
+			PhoneNumber: v.PhoneNumber,
 		})
-	}
-
-	for _, v := range projectTeam {
-		res = append(res, v)
 	}
 
 	return res, nil

@@ -226,6 +226,9 @@ func (m *userModel) SelectByEnable() ([]*User, error) {
 
 func (m *userModel) SelectByIds(ids []int) ([]*User, error) {
 	var users []*User
+	if len(ids) == 0 {
+		return users, nil
+	}
 	sqlStr := fmt.Sprintf("select * from %s where `state` = ? and id in (?) ", m.table)
 	query1, args, err := sqlx.In(sqlStr, UserStatusEnable, ids)
 	if err != nil {

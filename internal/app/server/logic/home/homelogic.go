@@ -78,7 +78,7 @@ func (b *bisLogic) UserData() (*RespUserData, error) {
 	}
 
 	for _, userId := range userIds {
-		if projectMap[userId] > 0 && recordMap[userId] > 0 && attachedMap[userId] > 0 {
+		if projectMap[userId] > 0 || recordMap[userId] > 0 || attachedMap[userId] > 0 {
 			res.UserNames = append(res.UserNames, userNameMap[userId])
 			res.ProjectCounts = append(res.ProjectCounts, projectMap[userId])
 			res.RecordCounts = append(res.RecordCounts, recordMap[userId])
