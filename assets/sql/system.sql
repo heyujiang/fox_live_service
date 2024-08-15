@@ -58,3 +58,5 @@ create table dept (
       updated_at timestamp not null default current_timestamp on update current_timestamp comment '更新时间',
       key `idx_pid` (`pid`)
 )  engine = innodb comment '部门';
+
+alter table dept add column title varchar(100) not null default '' comment '菜单名称';

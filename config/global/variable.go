@@ -10,9 +10,9 @@ var (
 
 	LogPath = "storages/logs"
 
-	ConfigPath = "/home/autowise/work/go/fox_live_service/configs"
+	//ConfigPath = "/home/autowise/work/go/fox_live_service/configs"
 	//C:\Users\syxsx\GolandProjects\fox_live_service\config
-	//ConfigPath = "C:/Users/syxsx/GolandProjects/fox_live_service/configs"
+	ConfigPath = "C:/Users/syxsx/GolandProjects/fox_live_service/configs"
 	ConfigFile = "config"
 
 	FileUploadPath = "storages/upload"
