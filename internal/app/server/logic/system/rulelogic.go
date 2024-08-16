@@ -2,7 +2,6 @@ package system
 
 import (
 	"errors"
-	"fmt"
 	"fox_live_service/config/global"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
@@ -230,7 +229,6 @@ func (r *ruleLogic) List() ([]*RespRuleListItem, error) {
 	ruleMap := make(map[int][]*RespRuleListItem)
 	ruleMap[0] = []*RespRuleListItem{}
 	for _, rule := range rules {
-		fmt.Println(fmt.Sprintf("%+v", rule))
 		if _, ok := ruleMap[rule.Pid]; !ok {
 			ruleMap[rule.Pid] = make([]*RespRuleListItem, 0)
 		}
@@ -301,7 +299,6 @@ func (r *ruleLogic) Parents() ([]*RespRuleParentItem, error) {
 	ruleMap := make(map[int][]*RespRuleParentItem)
 	ruleMap[0] = []*RespRuleParentItem{}
 	for _, rule := range rules {
-		fmt.Println(fmt.Sprintf("%+v", rule))
 		if _, ok := ruleMap[rule.Pid]; !ok {
 			ruleMap[rule.Pid] = make([]*RespRuleParentItem, 0)
 		}

@@ -526,12 +526,13 @@ func (b *bisLogic) Info(req *ReqInfoProject) (*RespInfoProject, error) {
 func (b *bisLogic) List(req *ReqProjectList, uid int) (*RespProjectList, error) {
 	logic.VerifyReqPage(&req.ReqPage)
 
-	projectIds, err := b.getMyProjectIds(uid)
+	projectIds, err := b.GetMyProjectIds(uid)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
 	}
 
 	cond := b.buildSearchCond(req, projectIds)
+	fmt.Println(fmt.Sprintf("cond : %+v ", cond))
 	totalCount, err := model.ProjectModel.GetProjectCountByCond(cond)
 	if err != nil {
 		slog.Error("list project get user count error", "err", err.Error())
@@ -580,7 +581,9 @@ func (b *bisLogic) List(req *ReqProjectList, uid int) (*RespProjectList, error) 
 func (b *bisLogic) buildSearchCond(req *ReqProjectList, projectIds []int) *model.ProjectCond {
 	cond := &model.ProjectCond{}
 
-	cond.Ids = projectIds
+	if len(projectIds) > 0 {
+		cond.Ids = projectIds
+	}
 
 	if req.Name != "" {
 		cond.Name = req.Name
@@ -622,7 +625,7 @@ func (b *bisLogic) Option(req *ReqProjectOption) ([]*RespProjectOption, error) {
 	return res, nil
 }
 
-func (b *bisLogic) getMyProjectIds(uid int) ([]int, error) {
+func (b *bisLogic) GetMyProjectIds(uid int) ([]int, error) {
 	//查询用户的项目
 	user, err := model.UserModel.Find(uid)
 	if err != nil {
@@ -637,7 +640,6 @@ func (b *bisLogic) getMyProjectIds(uid int) ([]int, error) {
 		}
 	}
 
-	// 判断用户角色
 	projectPerson, err := model.ProjectPersonModel.SelectByUserId(uid)
 	if err != nil {
 		slog.Error("get user has project list error", "err", err.Error())
@@ -647,11 +649,15 @@ func (b *bisLogic) getMyProjectIds(uid int) ([]int, error) {
 	for _, person := range projectPerson {
 		projectIds = append(projectIds, person.ProjectId)
 	}
+
+	if len(projectIds) == 0 {
+		projectIds = append(projectIds, -1)
+	}
 	return projectIds, nil
 }
 
 func (b *bisLogic) GetMyProject(uid int) ([]*ListProjectItem, error) {
-	projectIds, err := b.getMyProjectIds(uid)
+	projectIds, err := b.GetMyProjectIds(uid)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
 	}
@@ -708,7 +714,6 @@ func (b *bisLogic) ViewCount() (*RespProjectViewCount, error) {
 
 	now := time.Now()
 	monthTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	fmt.Println(fmt.Sprintf("month begin : %v", monthTime))
 	for _, v := range projects {
 		res.TotalCapacity += v.Capacity
 		if v.Star == 3 {
@@ -730,7 +735,6 @@ func (b *bisLogic) GetLatestProject(req *ReqGetLatestProject) ([]*ListProjectIte
 	} else {
 		beginTime = beginTime.AddDate(0, 0, -7)
 	}
-	fmt.Println(fmt.Sprintf("begintime : %+v ; type : %s ", beginTime, req.Latest))
 	var notExistIds, existIds, star = make([]int, 0), make([]int, 0), 0
 
 	if req.Type == "threeStar" {
@@ -795,13 +799,10 @@ func (b *bisLogic) PersonCapacity() ([]*RespPersonCapacityItem, error) {
 		projectIds = append(projectIds, v.Id)
 	}
 
-	fmt.Println(fmt.Sprintf("%+v", projectCap))
-
 	projectPersons, err := model.ProjectPersonModel.SelectByProjectIds(projectIds)
 
 	resMap := make(map[int]*RespPersonCapacityItem)
 	for _, v := range projectPersons {
-		fmt.Println(fmt.Sprintf("username : %s , project_id : %d", v.Name, v.ProjectId))
 		if _, ok := resMap[v.UserId]; !ok {
 			resMap[v.UserId] = &RespPersonCapacityItem{
 				UserId:   v.UserId,
@@ -819,4 +820,12 @@ func (b *bisLogic) PersonCapacity() ([]*RespPersonCapacityItem, error) {
 	}
 
 	return res, nil
+}
+
+func (b *bisLogic) ProjectData() error {
+	//查询所有项目
+
+	//查询所有员工
+
+	return nil
 }

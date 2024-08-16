@@ -30,4 +30,5 @@ func registerUser(e *gin.Engine) {
 
 	user.GET("/myProjects", handler.ProjectHandler.GetMyProject)
 	user.GET("/myLatestRecords", handler.ProjectRecordHandler.GetLatestRecords)
+	user.GET("/myTeams", handler.ProjectRecordHandler.GetTeams)
 }

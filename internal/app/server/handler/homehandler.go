@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fox_live_service/internal/app/server/logic/home"
 	"fox_live_service/internal/app/server/logic/project"
 	"fox_live_service/pkg/common"
 	"fox_live_service/pkg/errorx"
@@ -55,6 +56,16 @@ func (h *homeHandler) LatestProject(c *gin.Context) {
 
 func (h *homeHandler) PersonCapacity(c *gin.Context) {
 	res, err := project.BisLogic.PersonCapacity()
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+	common.ResponseOK(c, res)
+	return
+}
+
+func (h *homeHandler) UserData(c *gin.Context) {
+	res, err := home.BisLogic.UserData()
 	if err != nil {
 		common.ResponseErr(c, err)
 		return

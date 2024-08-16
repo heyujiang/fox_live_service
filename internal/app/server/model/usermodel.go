@@ -113,9 +113,9 @@ func (m *userModel) Find(id int) (*User, error) {
 
 // Select 查询所有数据
 func (m *userModel) Select() ([]*User, error) {
-	sqlStr := fmt.Sprintf("select * from %s", m.table)
+	sqlStr := fmt.Sprintf("select * from %s where `state` = ?", m.table)
 	var users []*User
-	if err := db.Select(&users, sqlStr); err != nil {
+	if err := db.Select(&users, sqlStr, UserStatusEnable); err != nil {
 		slog.Error("select user err ", "sql", sqlStr, "err ", err.Error())
 		return nil, err
 	}
@@ -226,6 +226,9 @@ func (m *userModel) SelectByEnable() ([]*User, error) {
 
 func (m *userModel) SelectByIds(ids []int) ([]*User, error) {
 	var users []*User
+	if len(ids) == 0 {
+		return users, nil
+	}
 	sqlStr := fmt.Sprintf("select * from %s where `state` = ? and id in (?) ", m.table)
 	query1, args, err := sqlx.In(sqlStr, UserStatusEnable, ids)
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 	"golang.org/x/exp/slog"
 	"time"
 )
@@ -130,4 +131,24 @@ func (m *projectAttachedModel) GetAllByProjectId(projectId int) ([]*ProjectAttac
 		return nil, err
 	}
 	return projectAttacheds, nil
+}
+
+func (m *projectAttachedModel) SelectGroupCountByUserIds(userIds []int) ([]*UserCountItem, error) {
+	items := make([]*UserCountItem, 0)
+	if len(userIds) == 0 {
+		return items, nil
+	}
+
+	sqlStr := fmt.Sprintf("select `user_id`,count(*) as `count` from %s where user_id in (?) group by user_id ", m.table)
+	query, args, err := sqlx.In(sqlStr, userIds)
+	if err != nil {
+		slog.Error("get project record error ", "sql", sqlStr, "err", err.Error())
+		return nil, err
+	}
+
+	if err := db.Select(&items, query, args...); err != nil {
+		slog.Error("get project record error ", "sql", sqlStr, "err", err.Error())
+		return nil, err
+	}
+	return items, nil
 }

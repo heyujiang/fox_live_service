@@ -2,7 +2,6 @@ package system
 
 import (
 	"errors"
-	"fmt"
 	"fox_live_service/config/global"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
@@ -153,7 +152,6 @@ func (r *roleLogic) List() ([]*RespRoleListItem, error) {
 	roleMap := make(map[int][]*RespRoleListItem)
 	roleMap[0] = []*RespRoleListItem{}
 	for _, role := range roles {
-		fmt.Println(fmt.Sprintf("%+v", role))
 		if _, ok := roleMap[role.Pid]; !ok {
 			roleMap[role.Pid] = make([]*RespRoleListItem, 0)
 		}
@@ -209,7 +207,6 @@ func (r *roleLogic) Parents() ([]*RespRoleParentItem, error) {
 	roleMap := make(map[int][]*RespRoleParentItem)
 	roleMap[0] = []*RespRoleParentItem{}
 	for _, role := range roles {
-		fmt.Println(fmt.Sprintf("%+v", role))
 		if _, ok := roleMap[role.Pid]; !ok {
 			roleMap[role.Pid] = make([]*RespRoleParentItem, 0)
 		}
