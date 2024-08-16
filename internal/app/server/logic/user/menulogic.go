@@ -1,5 +1,13 @@
 package user
 
+import (
+	"errors"
+	"fox_live_service/internal/app/server/model"
+	"fox_live_service/pkg/errorx"
+	"github.com/spf13/cast"
+	"strings"
+)
+
 var MenuLogic = newMenuLogic()
 
 type (
@@ -36,216 +44,289 @@ func newMenuLogic() *menuLogic {
 }
 
 func (m *menuLogic) GetMenus(uid int) ([]*RespMenuListItem, error) {
-	res := []*RespMenuListItem{
-		{
-			Name: "home",
-			Meta: &MenuMeta{
-				Id:           8,
-				Icon:         "icon-dashboard",
-				RequiresAuth: true,
-				Locale:       "项目概览",
-				IgnoreCache:  true,
-			},
-			Component: "/dashboard/workplace/index",
-			Path:      "/workplace",
-		},
-		{
-			Name: "project",
-			Meta: &MenuMeta{
-				Id:          69,
-				HideInMenu:  true,
-				Locale:      "项目管理",
-				IgnoreCache: true,
-				Icon:        "icon-menu-unfold",
-			},
-			Component: "LAYOUT",
-			Path:      "/project",
-			Redirect:  "/project/project",
-			Children: []*RespMenuListItem{
-				{
-					Name:      "project",
-					Component: "/project/project/index",
-					Meta: &MenuMeta{
-						Id:           671,
-						Locale:       "项目列表",
-						IgnoreCache:  true,
-						RequiresAuth: true,
-					},
-					Path: "project",
-				},
-				{
-					Name:      "addproject",
-					Component: "/project/addproject/index",
-					Meta: &MenuMeta{
-						Id:           672,
-						Locale:       "新建项目",
-						IgnoreCache:  true,
-						RequiresAuth: true,
-					},
-					Path: "addproject",
-				},
-				{
-					Name:      "detail",
-					Component: "/project/detail/index",
-					Meta: &MenuMeta{
-						Id:           677,
-						Locale:       "项目详情",
-						IgnoreCache:  true,
-						RequiresAuth: true,
-						HideInMenu:   true,
-					},
-					Path: "detail",
-				},
-			},
-		},
-		{
-			Name: "project_ing",
-			Meta: &MenuMeta{
-				Id:          70,
-				HideInMenu:  true,
-				Locale:      "项目进度",
-				IgnoreCache: true,
-				Icon:        "icon-schedule",
-			},
-			Component: "LAYOUT",
-			Path:      "/project",
-			Redirect:  "/project/project_ing",
-			Children: []*RespMenuListItem{
-				{
-					Name:      "project_ing",
-					Component: "/project/project_ing/index",
-					Meta: &MenuMeta{
-						Id:           673,
-						Locale:       "项目进度列表",
-						IgnoreCache:  true,
-						RequiresAuth: true,
-					},
-					Path: "project_ing",
-				},
-			},
-		}, {
-			Name: "system",
-			Meta: &MenuMeta{
-				Id:          70,
-				HideInMenu:  true,
-				Locale:      "系统管理",
-				IgnoreCache: true,
-				Icon:        "icon-settings",
-			},
-			Component: "LAYOUT",
-			Path:      "/system",
-			Redirect:  "/system/account",
-			Children: []*RespMenuListItem{
-				{
-					Component: "/system/account/index",
-					Meta: &MenuMeta{
-						Id:           121,
-						Icon:         "icon-user",
-						Locale:       "用户管理",
-						RequiresAuth: true,
-						IgnoreCache:  true,
-					},
-					Name: "account",
-					Path: "account",
-				},
-				{
-					Component: "/system/dept/index",
-					Meta: &MenuMeta{
-						Id:           121,
-						Icon:         "icon-user",
-						Locale:       "部门管理",
-						RequiresAuth: true,
-						IgnoreCache:  true,
-					},
-					Name: "dept",
-					Path: "dept",
-				},
-				{
-					Component: "/system/role/index",
-					Meta: &MenuMeta{
-						Id:           121,
-						Icon:         "icon-user",
-						Locale:       "角色管理",
-						RequiresAuth: true,
-						IgnoreCache:  true,
-					},
-					Name: "role",
-					Path: "role",
-				},
-				{
-					Component: "/system/rule/index",
-					Meta: &MenuMeta{
-						Id:           121,
-						Icon:         "icon-user",
-						Locale:       "权限管理",
-						RequiresAuth: true,
-						IgnoreCache:  true,
-					},
-					Name: "rule",
-					Path: "rule",
-				},
-			},
-		},
-		{
-			Component: "/system/node/index",
-			Meta: &MenuMeta{
-				Id:           12,
-				Icon:         "icon-branch",
-				Locale:       "节点管理",
-				RequiresAuth: true,
-				IgnoreCache:  true,
-			},
-			Name: "node",
-			Path: "node",
-		},
-		{
-			Name: "user_center",
-			Meta: &MenuMeta{
-				Id:          73,
-				HideInMenu:  true,
-				Locale:      "个人中心",
-				IgnoreCache: true,
-				Icon:        "icon-user",
-			},
-			Component: "LAYOUT",
-			Path:      "/user",
-			Redirect:  "/user/info",
-			Children: []*RespMenuListItem{
-				{
-					Name:      "user_info",
-					Component: "/user/info/index",
-					Meta: &MenuMeta{
-						Id:           678,
-						Locale:       "我的项目",
-						IgnoreCache:  true,
-						RequiresAuth: true,
-					},
-					Path: "info",
-				},
-				{
-					Name:      "user_weekday",
-					Component: "/user/weekday/index",
-					Meta: &MenuMeta{
-						Id:           680,
-						Locale:       "周报日报",
-						IgnoreCache:  true,
-						RequiresAuth: true,
-					},
-					Path: "weekday",
-				},
-				{
-					Name:      "user_setting",
-					Component: "/user/setting/index",
-					Meta: &MenuMeta{
-						Id:          679,
-						Locale:      "个人设置",
-						IgnoreCache: true,
-					},
-					Path: "setting",
-				},
-			},
-		},
+	user, err := model.UserModel.Find(uid)
+	if err != nil {
+		if errors.Is(err, model.ErrNotRecord) {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "用户不存在")
+		}
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户信息出错")
 	}
 
-	return res, nil
+	ruleIds := make([]int, 0)
+	rules := make([]*model.Rule, 0)
+	if user.IsSystem == model.NonSystemUser { //非系统账号 获取用户角色
+		roleIds := cast.ToIntSlice(strings.Split(user.RoleIds, ","))
+		roles, err := model.RoleModel.SelectByIds(roleIds)
+		if err != nil {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户角色信息出错")
+		}
+
+		for _, role := range roles {
+			ruleIds = append(ruleIds, cast.ToIntSlice(strings.Split(role.RuleIds, ","))...)
+		}
+
+		if len(ruleIds) == 0 {
+			return []*RespMenuListItem{}, nil
+		}
+
+		rules, err = model.RuleModel.SelectByIds(ruleIds)
+		if err != nil {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户菜单出错")
+		}
+	} else {
+		rules, err = model.RuleModel.SelectEnable()
+		if err != nil {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户菜单出错")
+		}
+	}
+
+	ruleMap := make(map[int][]*RespMenuListItem)
+	ruleMap[0] = make([]*RespMenuListItem, 0)
+	for _, rule := range rules {
+		if rule.Type != model.RuleTypeBut {
+			if _, ok := ruleMap[rule.Pid]; !ok {
+				ruleMap[rule.Pid] = make([]*RespMenuListItem, 0)
+			}
+			ruleMap[rule.Pid] = append(ruleMap[rule.Pid], &RespMenuListItem{
+				Name: rule.Title,
+				Meta: &MenuMeta{
+					Id:                 rule.Id,
+					Roles:              nil,
+					RequiresAuth:       cast.ToBool(rule.RequiresAuth),
+					Icon:               rule.Icon,
+					Locale:             rule.Title,
+					HideInMenu:         cast.ToBool(rule.HideInMenu),
+					HideChildrenInMenu: cast.ToBool(rule.HideChildrenInMenu),
+					Order:              rule.Order,
+					NoAffix:            cast.ToBool(rule.NoAffix),
+					Title:              rule.Title,
+				},
+				Component: rule.Component,
+				Path:      rule.RoutePath,
+				Icon:      rule.Icon,
+				Redirect:  rule.Redirect,
+				Children:  make([]*RespMenuListItem, 0),
+			})
+		}
+	}
+	for _, mv := range ruleMap {
+		for _, v := range mv {
+			v.Children = ruleMap[v.Meta.Id]
+		}
+	}
+
+	return ruleMap[0], nil
+	//res := []*RespMenuListItem{
+	//	{
+	//		Name: "home",
+	//		Meta: &MenuMeta{
+	//			Id:           8,
+	//			Icon:         "icon-dashboard",
+	//			RequiresAuth: true,
+	//			Locale:       "项目概览",
+	//			IgnoreCache:  true,
+	//		},
+	//		Component: "/dashboard/workplace/index",
+	//		Path:      "/workplace",
+	//	},
+	//	{
+	//		Name: "project",
+	//		Meta: &MenuMeta{
+	//			Id:          69,
+	//			HideInMenu:  true,
+	//			Locale:      "项目管理",
+	//			IgnoreCache: true,
+	//			Icon:        "icon-menu-unfold",
+	//		},
+	//		Component: "LAYOUT",
+	//		Path:      "/project",
+	//		Redirect:  "/project/project",
+	//		Children: []*RespMenuListItem{
+	//			{
+	//				Name:      "project",
+	//				Component: "/project/project/index",
+	//				Meta: &MenuMeta{
+	//					Id:           671,
+	//					Locale:       "项目列表",
+	//					IgnoreCache:  true,
+	//					RequiresAuth: true,
+	//				},
+	//				Path: "project",
+	//			},
+	//			{
+	//				Name:      "addproject",
+	//				Component: "/project/addproject/index",
+	//				Meta: &MenuMeta{
+	//					Id:           672,
+	//					Locale:       "新建项目",
+	//					IgnoreCache:  true,
+	//					RequiresAuth: true,
+	//				},
+	//				Path: "addproject",
+	//			},
+	//			{
+	//				Name:      "detail",
+	//				Component: "/project/detail/index",
+	//				Meta: &MenuMeta{
+	//					Id:           677,
+	//					Locale:       "项目详情",
+	//					IgnoreCache:  true,
+	//					RequiresAuth: true,
+	//					HideInMenu:   true,
+	//				},
+	//				Path: "detail",
+	//			},
+	//		},
+	//	},
+	//	{
+	//		Name: "project_ing",
+	//		Meta: &MenuMeta{
+	//			Id:          70,
+	//			HideInMenu:  true,
+	//			Locale:      "项目进度",
+	//			IgnoreCache: true,
+	//			Icon:        "icon-schedule",
+	//		},
+	//		Component: "LAYOUT",
+	//		Path:      "/project",
+	//		Redirect:  "/project/project_ing",
+	//		Children: []*RespMenuListItem{
+	//			{
+	//				Name:      "project_ing",
+	//				Component: "/project/project_ing/index",
+	//				Meta: &MenuMeta{
+	//					Id:           673,
+	//					Locale:       "项目进度列表",
+	//					IgnoreCache:  true,
+	//					RequiresAuth: true,
+	//				},
+	//				Path: "project_ing",
+	//			},
+	//		},
+	//	}, {
+	//		Name: "system",
+	//		Meta: &MenuMeta{
+	//			Id:          70,
+	//			HideInMenu:  true,
+	//			Locale:      "系统管理",
+	//			IgnoreCache: true,
+	//			Icon:        "icon-settings",
+	//		},
+	//		Component: "LAYOUT",
+	//		Path:      "/system",
+	//		Redirect:  "/system/account",
+	//		Children: []*RespMenuListItem{
+	//			{
+	//				Component: "/system/account/index",
+	//				Meta: &MenuMeta{
+	//					Id:           121,
+	//					Icon:         "icon-user",
+	//					Locale:       "用户管理",
+	//					RequiresAuth: true,
+	//					IgnoreCache:  true,
+	//				},
+	//				Name: "account",
+	//				Path: "account",
+	//			},
+	//			{
+	//				Component: "/system/dept/index",
+	//				Meta: &MenuMeta{
+	//					Id:           121,
+	//					Icon:         "icon-user",
+	//					Locale:       "部门管理",
+	//					RequiresAuth: true,
+	//					IgnoreCache:  true,
+	//				},
+	//				Name: "dept",
+	//				Path: "dept",
+	//			},
+	//			{
+	//				Component: "/system/role/index",
+	//				Meta: &MenuMeta{
+	//					Id:           121,
+	//					Icon:         "icon-user",
+	//					Locale:       "角色管理",
+	//					RequiresAuth: true,
+	//					IgnoreCache:  true,
+	//				},
+	//				Name: "role",
+	//				Path: "role",
+	//			},
+	//			{
+	//				Component: "/system/rule/index",
+	//				Meta: &MenuMeta{
+	//					Id:           121,
+	//					Icon:         "icon-user",
+	//					Locale:       "权限管理",
+	//					RequiresAuth: true,
+	//					IgnoreCache:  true,
+	//				},
+	//				Name: "rule",
+	//				Path: "rule",
+	//			},
+	//		},
+	//	},
+	//	{
+	//		Component: "/system/node/index",
+	//		Meta: &MenuMeta{
+	//			Id:           12,
+	//			Icon:         "icon-branch",
+	//			Locale:       "节点管理",
+	//			RequiresAuth: true,
+	//			IgnoreCache:  true,
+	//		},
+	//		Name: "node",
+	//		Path: "node",
+	//	},
+	//	{
+	//		Name: "user_center",
+	//		Meta: &MenuMeta{
+	//			Id:          73,
+	//			HideInMenu:  true,
+	//			Locale:      "个人中心",
+	//			IgnoreCache: true,
+	//			Icon:        "icon-user",
+	//		},
+	//		Component: "LAYOUT",
+	//		Path:      "/user",
+	//		Redirect:  "/user/info",
+	//		Children: []*RespMenuListItem{
+	//			{
+	//				Name:      "user_info",
+	//				Component: "/user/info/index",
+	//				Meta: &MenuMeta{
+	//					Id:           678,
+	//					Locale:       "我的项目",
+	//					IgnoreCache:  true,
+	//					RequiresAuth: true,
+	//				},
+	//				Path: "info",
+	//			},
+	//			{
+	//				Name:      "user_weekday",
+	//				Component: "/user/weekday/index",
+	//				Meta: &MenuMeta{
+	//					Id:           680,
+	//					Locale:       "周报日报",
+	//					IgnoreCache:  true,
+	//					RequiresAuth: true,
+	//				},
+	//				Path: "weekday",
+	//			},
+	//			{
+	//				Name:      "user_setting",
+	//				Component: "/user/setting/index",
+	//				Meta: &MenuMeta{
+	//					Id:          679,
+	//					Locale:      "个人设置",
+	//					IgnoreCache: true,
+	//				},
+	//				Path: "setting",
+	//			},
+	//		},
+	//	},
+	//}
+
+	//return res, nil
+
 }

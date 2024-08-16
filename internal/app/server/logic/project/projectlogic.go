@@ -142,10 +142,12 @@ type (
 	}
 
 	ReqFromProjectList struct {
+		Id        int     `form:"id"`
 		Name      string  `form:"name"`
 		UserId    int     `form:"userId"`
 		Star      int     `form:"star"`
 		Type      int     `form:"type"`
+		Progress  int     `form:"progress"` //1 有进展 2 无进展
 		CreatedAt []int64 `form:"createdAt[]"`
 	}
 
@@ -657,12 +659,26 @@ func (b *bisLogic) GetMyProjectIds(uid int) ([]int, error) {
 }
 
 func (b *bisLogic) GetMyProject(uid int) ([]*ListProjectItem, error) {
-	projectIds, err := b.GetMyProjectIds(uid)
+	//projectIds, err := b.GetMyProjectIds(uid)
+	//if err != nil {
+	//	return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
+	//}
+	//if len(projectIds) == 0 {
+	//	return []*ListProjectItem{}, nil
+	//}
+
+	projectPerson, err := model.ProjectPersonModel.SelectByUserId(uid)
 	if err != nil {
-		return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
+		slog.Error("get user has project list error", "err", err.Error())
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询我的项目出错")
 	}
+	projectIds := make([]int, 0, len(projectPerson))
+	for _, person := range projectPerson {
+		projectIds = append(projectIds, person.ProjectId)
+	}
+
 	if len(projectIds) == 0 {
-		return []*ListProjectItem{}, nil
+		projectIds = append(projectIds, -1)
 	}
 
 	projects, err := model.ProjectModel.SelectByIds(projectIds)
@@ -713,7 +729,7 @@ func (b *bisLogic) ViewCount() (*RespProjectViewCount, error) {
 	}
 
 	now := time.Now()
-	monthTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	monthTime := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
 	for _, v := range projects {
 		res.TotalCapacity += v.Capacity
 		if v.Star == 3 {

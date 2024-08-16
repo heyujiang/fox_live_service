@@ -377,9 +377,23 @@ func (b *recordLogic) GetAllLatestRecords() ([]*ListProjectRecordItem, error) {
 }
 
 func (b *recordLogic) GetTeams(uid int) ([]*RespTeam, error) {
-	myProjectIds, err := BisLogic.GetMyProjectIds(uid)
+	//myProjectIds, err := BisLogic.GetMyProjectIds(uid)
+	//if err != nil {
+	//	return nil, errorx.NewErrorX(errorx.ErrCommon, "查询团队出错")
+	//}
+
+	projectPerson, err := model.ProjectPersonModel.SelectByUserId(uid)
 	if err != nil {
-		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询团队出错")
+		slog.Error("get user has project list error", "err", err.Error())
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询我的项目出错")
+	}
+	myProjectIds := make([]int, 0, len(projectPerson))
+	for _, person := range projectPerson {
+		myProjectIds = append(myProjectIds, person.ProjectId)
+	}
+
+	if len(myProjectIds) == 0 {
+		myProjectIds = append(myProjectIds, -1)
 	}
 
 	projectPersons, err := model.ProjectPersonModel.SelectAllByProjectIds(myProjectIds)

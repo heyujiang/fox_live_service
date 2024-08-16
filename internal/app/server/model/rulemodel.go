@@ -153,7 +153,7 @@ func (m *ruleModel) SelectDirAndMenu() ([]*Rule, error) {
 
 func (m *ruleModel) SelectByIds(ids []int) ([]*Rule, error) {
 	var rules []*Rule
-	sqlStr := fmt.Sprintf("select * from %s where `status` = ? and id in (?) ", m.table)
+	sqlStr := fmt.Sprintf("select * from %s where `status` = ? and id in (?) order by `order` asc,`id` asc", m.table)
 	query1, args, err := sqlx.In(sqlStr, RuleStatusEnable, ids)
 	if err != nil {
 		slog.Error("batch select rule by ids error", "sql", sqlStr, "ids", ids, "err ", err.Error())
@@ -168,7 +168,7 @@ func (m *ruleModel) SelectByIds(ids []int) ([]*Rule, error) {
 }
 
 func (m *ruleModel) SelectEnable() ([]*Rule, error) {
-	sqlStr := fmt.Sprintf("select * from %s where status = ? order by id asc ,`order` asc ", m.table)
+	sqlStr := fmt.Sprintf("select * from %s where status = ? order by `order` asc, `id` asc  ", m.table)
 	rules := make([]*Rule, 0)
 	if err := db.Select(&rules, sqlStr, RuleStatusEnable); err != nil {
 		slog.Error("select rule err ", "sql", sqlStr, "err ", err.Error())
