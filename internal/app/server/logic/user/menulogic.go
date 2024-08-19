@@ -52,8 +52,24 @@ func (m *menuLogic) GetMenus(uid int) ([]*RespMenuListItem, error) {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户信息出错")
 	}
 
+	rules, err := model.RuleModel.SelectEnable()
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取菜单出错")
+	}
+
+	res := make([]*RespMenuListItem, 0)
+	home := &RespMenuListItem{ // 非 （系统账号 or 超级管理员） 首页为我的项目
+		Name:     "home",
+		Path:     "/home",
+		Redirect: "/user/info",
+		Meta: &MenuMeta{
+			Order:              0,
+			HideInMenu:         true,
+			HideChildrenInMenu: true,
+		},
+	}
+
 	ruleIds := make([]int, 0)
-	rules := make([]*model.Rule, 0)
 	if user.IsSystem == model.NonSystemUser { //非系统账号 获取用户角色
 		roleIds := cast.ToIntSlice(strings.Split(user.RoleIds, ","))
 		roles, err := model.RoleModel.SelectByIds(roleIds)
@@ -61,23 +77,53 @@ func (m *menuLogic) GetMenus(uid int) ([]*RespMenuListItem, error) {
 			return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户角色信息出错")
 		}
 
+		isSuperRole := false
 		for _, role := range roles {
+			if role.Id == model.SuperManagerRoleId { //如果用户是超级管理员
+				isSuperRole = true
+				//系统账号 or 超级管理原 首页为数据看板
+				home.Redirect = "/workplace"
+				break
+			}
 			ruleIds = append(ruleIds, cast.ToIntSlice(strings.Split(role.RuleIds, ","))...)
 		}
 
-		if len(ruleIds) == 0 {
-			return []*RespMenuListItem{}, nil
-		}
+		if !isSuperRole {
+			if len(ruleIds) == 0 {
+				return []*RespMenuListItem{}, nil
+			}
 
-		rules, err = model.RuleModel.SelectByIds(ruleIds)
-		if err != nil {
-			return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户菜单出错")
+			roleRuleIdMap := make(map[int]struct{}) // role 拥有的 rule 的 id 的map ， 用作验证 rule 是否属于当前角色
+			for _, ruleId := range ruleIds {
+				roleRuleIdMap[ruleId] = struct{}{}
+			}
+
+			ruleMapKId := make(map[int]*model.Rule, len(rules))
+			for _, rule := range rules {
+				ruleMapKId[rule.Id] = rule
+			}
+
+			for _, rule := range rules {
+				if _, ok := roleRuleIdMap[rule.Id]; ok { // rule 是当前 role 的 rule
+					//判断是否是顶级rule ，如否，判断其PID是否属于当前角色的rule，如否加入
+					if rule.Pid != 0 {
+						if _, pok := roleRuleIdMap[rule.Pid]; !pok {
+							roleRuleIdMap[rule.Pid] = struct{}{}
+						}
+					}
+				}
+			}
+
+			newRules := make([]*model.Rule, 0)
+			for _, rule := range rules {
+				if _, ok := roleRuleIdMap[rule.Id]; ok {
+					newRules = append(newRules, rule)
+				}
+			}
+			rules = newRules
 		}
-	} else {
-		rules, err = model.RuleModel.SelectEnable()
-		if err != nil {
-			return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户菜单出错")
-		}
+	} else { //系统账号 or 超级管理原 首页为数据看板
+		home.Redirect = "/workplace"
 	}
 
 	ruleMap := make(map[int][]*RespMenuListItem)
@@ -114,8 +160,8 @@ func (m *menuLogic) GetMenus(uid int) ([]*RespMenuListItem, error) {
 			v.Children = ruleMap[v.Meta.Id]
 		}
 	}
-
-	return ruleMap[0], nil
+	res = append(append(res, home), ruleMap[0]...)
+	return res, nil
 	//res := []*RespMenuListItem{
 	//	{
 	//		Name: "home",
