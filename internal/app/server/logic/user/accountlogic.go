@@ -36,7 +36,7 @@ type (
 	}
 
 	ReqUpdateBasic struct {
-		Email string `json:"email"`
+		Email string `json:"email" binding:"omitempty,email"`
 	}
 	RespUpdateBasic struct {
 	}

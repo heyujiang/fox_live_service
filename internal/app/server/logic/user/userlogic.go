@@ -31,7 +31,7 @@ type (
 		Id          int    `form:"id"`
 		PhoneNumber string `form:"phoneNumber"`
 		Username    string `form:"username"`
-		State       int    `form:"state"`
+		State       int    `form:"state" binding:"omitempty,oneof=1 2"`
 	}
 
 	RespUserList struct {
@@ -60,15 +60,15 @@ type (
 	}
 
 	ReqCreateUser struct {
-		Username    string `json:"username"`
-		Password    string `json:"password"`
-		PhoneNumber string `json:"phoneNumber"`
-		Email       string `json:"email"`
+		Username    string `json:"username" binding:"required"`
+		Password    string `json:"password" binding:"required"`
+		PhoneNumber string `json:"phoneNumber" binding:"required"`
+		Email       string `json:"email" binding:"omitempty,email"`
 		Name        string `json:"name"`
 		NickName    string `json:"nickName"`
 		Avatar      string `json:"avatar"`
-		RoleIds     []int  `json:"roleIds"`
-		DeptId      int    `json:"deptId"`
+		RoleIds     []int  `json:"roleIds" binding:"required"`
+		DeptId      int    `json:"deptId" binding:"required"`
 		Job         string `json:"job"`
 	}
 
@@ -84,7 +84,7 @@ type (
 	}
 
 	ReqBodyUpdateUser struct {
-		Email    string `json:"email"`
+		Email    string `json:"email" binding:"omitempty,email"`
 		Name     string `json:"name"`
 		NickName string `json:"nickName"`
 		Avatar   string `json:"avatar"`
