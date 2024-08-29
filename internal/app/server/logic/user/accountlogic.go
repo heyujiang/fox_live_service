@@ -5,7 +5,9 @@ import (
 	"fox_live_service/config/global"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
+	"github.com/spf13/cast"
 	"golang.org/x/exp/slog"
+	"strings"
 )
 
 var AccountLogic = newAccountLogic()
@@ -19,8 +21,10 @@ type (
 		Name        string `json:"name"`
 		Nickname    string `json:"nickname"`
 		Avatar      string `json:"avatar"`
+		Dept        string `json:"dept"`
 		Role        string `json:"role"`
 		Email       string `json:"email"`
+		Job         string `json:"job"`
 		PhoneNumber string `json:"phoneNumber"`
 		CreatedAt   string `json:"createdAt"`
 	}
@@ -32,7 +36,7 @@ type (
 	}
 
 	ReqUpdateBasic struct {
-		Email string `json:"email"`
+		Email string `json:"email" binding:"omitempty,email"`
 	}
 	RespUpdateBasic struct {
 	}
@@ -57,7 +61,26 @@ func (a *accountLogic) UserInfo(uid int) (*RespAccountUserInfo, error) {
 		if errors.Is(err, model.ErrNotRecord) {
 			return nil, errorx.NewErrorX(errorx.ErrCommon, "账户不存在")
 		}
-		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取账户信息失败")
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取账户信息出错")
+	}
+
+	roleIds := cast.ToIntSlice(strings.Split(user.RoleIds, ","))
+	roles, err := model.RoleModel.SelectByIds(roleIds)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取账户信息出错")
+	}
+	roleNames := make([]string, 0, len(roles))
+	for _, v := range roles {
+		roleNames = append(roleNames, v.Title)
+	}
+
+	dept, err := model.DeptModel.Find(user.DeptId)
+	if err != nil {
+		slog.Error("get account user info error ： ", "uid", uid, "err", err)
+		if errors.Is(err, model.ErrNotRecord) {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "部门不存在")
+		}
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取账户信息出错")
 	}
 
 	return &RespAccountUserInfo{
@@ -67,7 +90,9 @@ func (a *accountLogic) UserInfo(uid int) (*RespAccountUserInfo, error) {
 		Nickname:    user.NickName,
 		Avatar:      user.Avatar,
 		Email:       user.Email,
-		Role:        "",
+		Dept:        dept.Title,
+		Role:        strings.Join(roleNames, "，"),
+		Job:         user.Job,
 		PhoneNumber: user.PhoneNumber,
 		CreatedAt:   user.CreatedAt.Format(global.TimeFormat),
 	}, nil

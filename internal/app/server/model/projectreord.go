@@ -229,6 +229,11 @@ func (m *projectRecordModel) SelectByUserIds(userIds []int) ([]*ProjectRecord, e
 }
 
 func (m *projectRecordModel) SelectByProjectIds(projectIds []int) ([]*ProjectRecord, error) {
+	var projectRecords []*ProjectRecord
+
+	if len(projectIds) == 0 {
+		return projectRecords, nil
+	}
 	sqlStr := fmt.Sprintf("select * from %s where project_id in (?) order by created_at desc limit %d", m.table, latestRecordCountView)
 	query, args, err := sqlx.In(sqlStr, projectIds)
 	if err != nil {
@@ -236,7 +241,6 @@ func (m *projectRecordModel) SelectByProjectIds(projectIds []int) ([]*ProjectRec
 		return nil, err
 	}
 
-	var projectRecords []*ProjectRecord
 	if err := db.Select(&projectRecords, query, args...); err != nil {
 		slog.Error("get project record error ", "sql", sqlStr, "userIds", projectIds, "err ", err.Error())
 		return nil, err

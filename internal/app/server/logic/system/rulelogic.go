@@ -337,10 +337,10 @@ func (r *ruleLogic) GetRules(req *ReqGetRoleRules) ([]*RespRuleParentItem, error
 	}
 
 	roleRuleIdMap := make(map[int]struct{}) // role 拥有的 rule 的 id 的map ， 用作验证 rule 是否属于当前角色
-	if role.Id != 1 {
-		roleIds := cast.ToIntSlice(strings.Split(role.RuleIds, ","))
-		for _, roleId := range roleIds {
-			roleRuleIdMap[roleId] = struct{}{}
+	if role.Id != model.SuperManagerRoleId {
+		ruleIds := cast.ToIntSlice(strings.Split(role.RuleIds, ","))
+		for _, ruleId := range ruleIds {
+			roleRuleIdMap[ruleId] = struct{}{}
 		}
 
 		ruleMapKId := make(map[int]*model.Rule, len(rules))
@@ -353,7 +353,6 @@ func (r *ruleLogic) GetRules(req *ReqGetRoleRules) ([]*RespRuleParentItem, error
 				//判断是否是顶级rule ，如否，判断其PID是否属于当前角色的rule，如否加入
 				if rule.Pid != 0 {
 					if _, pok := roleRuleIdMap[rule.Pid]; !pok {
-						roleIds = append(roleIds, rule.Pid)
 						roleRuleIdMap[rule.Pid] = struct{}{}
 					}
 				}

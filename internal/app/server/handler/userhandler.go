@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"errors"
 	"fox_live_service/config/global"
 	"fox_live_service/internal/app/server/logic/user"
 	"fox_live_service/pkg/common"
 	"fox_live_service/pkg/errorx"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 var UserHandler = newUserHandler()
@@ -44,8 +46,14 @@ func (u *userHandler) Logout(c *gin.Context) {
 func (u *userHandler) List(c *gin.Context) {
 	var req user.ReqUserList
 	if err := c.ShouldBindQuery(&req); err != nil {
-		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
-		return
+		var errs validator.ValidationErrors
+		if !errors.As(err, &errs) {
+			common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+			return
+		} else {
+			common.ResponseErr(c, errorx.ValidationTran(errs))
+			return
+		}
 	}
 
 	res, err := user.BisLogic.List(&req)
@@ -79,8 +87,14 @@ func (u *userHandler) Info(c *gin.Context) {
 func (u *userHandler) Create(c *gin.Context) {
 	var req user.ReqCreateUser
 	if err := c.ShouldBindJSON(&req); err != nil {
-		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
-		return
+		var errs validator.ValidationErrors
+		if !errors.As(err, &errs) {
+			common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+			return
+		} else {
+			common.ResponseErr(c, errorx.ValidationTran(errs))
+			return
+		}
 	}
 
 	res, err := user.BisLogic.Create(&req, c.GetInt("uid"))

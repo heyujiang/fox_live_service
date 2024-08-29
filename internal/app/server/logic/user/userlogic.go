@@ -31,7 +31,7 @@ type (
 		Id          int    `form:"id"`
 		PhoneNumber string `form:"phoneNumber"`
 		Username    string `form:"username"`
-		State       int    `form:"state"`
+		State       int    `form:"state" binding:"omitempty,oneof=1 2"`
 	}
 
 	RespUserList struct {
@@ -54,20 +54,22 @@ type (
 		Roles       string `json:"roles"`
 		DeptId      int    `json:"deptId"`
 		Dept        string `json:"dept"`
+		Job         string `json:"job"`
 		CreatedAt   string `json:"createdAt"`
 		UpdatedAt   string `json:"updatedAt"`
 	}
 
 	ReqCreateUser struct {
-		Username    string `json:"username"`
-		Password    string `json:"password"`
-		PhoneNumber string `json:"phoneNumber"`
-		Email       string `json:"email"`
+		Username    string `json:"username" binding:"required"`
+		Password    string `json:"password" binding:"required"`
+		PhoneNumber string `json:"phoneNumber" binding:"required"`
+		Email       string `json:"email" binding:"omitempty,email"`
 		Name        string `json:"name"`
 		NickName    string `json:"nickName"`
 		Avatar      string `json:"avatar"`
-		RoleIds     []int  `json:"roleIds"`
-		DeptId      int    `json:"deptId"`
+		RoleIds     []int  `json:"roleIds" binding:"required"`
+		DeptId      int    `json:"deptId" binding:"required"`
+		Job         string `json:"job"`
 	}
 
 	RespCreateUser struct{}
@@ -82,12 +84,13 @@ type (
 	}
 
 	ReqBodyUpdateUser struct {
-		Email    string `json:"email"`
+		Email    string `json:"email" binding:"omitempty,email"`
 		Name     string `json:"name"`
 		NickName string `json:"nickName"`
 		Avatar   string `json:"avatar"`
 		RoleIds  []int  `json:"roleIds"`
 		DeptId   int    `json:"deptId"`
+		Job      string `json:"job"`
 	}
 
 	RespUpdateUser struct {
@@ -110,6 +113,7 @@ type (
 		Roles       string `json:"roles"`
 		DeptId      int    `json:"deptId"`
 		Dept        string `json:"dept"`
+		Job         string `json:"job"`
 		CreatedAt   string `json:"createdAt"`
 		UpdatedAt   string `json:"updatedAt"`
 	}
@@ -174,6 +178,8 @@ func (b *bisLogic) Create(req *ReqCreateUser, uid int) (*RespCreateUser, error) 
 		Avatar:      req.Avatar,
 		RoleIds:     strings.Join(cast.ToStringSlice(req.RoleIds), ","),
 		DeptId:      req.DeptId,
+		Job:         req.Job,
+		IsSystem:    model.NonSystemUser,
 		State:       model.UserStatusEnable,
 		CreatedId:   uid,
 		UpdatedId:   uid,
@@ -205,6 +211,7 @@ func (b *bisLogic) Update(req *ReqUpdateUser, uid int) (*RespUpdateUser, error) 
 		Avatar:    req.Avatar,
 		RoleIds:   strings.Join(cast.ToStringSlice(req.RoleIds), ","),
 		DeptId:    req.DeptId,
+		Job:       req.Job,
 		UpdatedId: uid,
 	}); err != nil {
 		slog.Error("update user error ", "id", req.Id, "err", err)
@@ -254,6 +261,7 @@ func (b *bisLogic) Info(req *ReqUserInfo) (*RespUserInfo, error) {
 		Roles:       strings.Join(roleTitles, ","),
 		DeptId:      user.DeptId,
 		Dept:        dept.Title,
+		Job:         user.Job,
 		CreatedAt:   user.CreatedAt.Format(global.TimeFormat),
 		UpdatedAt:   user.UpdatedAt.Format(global.TimeFormat),
 	}, nil
@@ -323,6 +331,7 @@ func (b *bisLogic) List(req *ReqUserList) (*RespUserList, error) {
 			Roles:       strings.Join(userRoles, ","),
 			Dept:        deptMap[user.DeptId],
 			DeptId:      user.DeptId,
+			Job:         user.Job,
 			CreatedAt:   user.CreatedAt.Format(global.TimeFormat),
 			UpdatedAt:   user.CreatedAt.Format(global.TimeFormat),
 		})

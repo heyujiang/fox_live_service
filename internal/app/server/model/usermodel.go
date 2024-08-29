@@ -9,11 +9,14 @@ import (
 	"time"
 )
 
+const NonSystemUser = 0
+const IsSystemUser = 1
+
 const (
 	UserStatusEnable = iota + 1
 	UserStatusDisable
 
-	inertStr = "`username`,`password`,`phone_number`,`email`,`name`,`nick_name`,`avatar`,`state`,`role_ids`,`dept_id`,`created_id`,`updated_id`"
+	inertStr = "`username`,`password`,`phone_number`,`email`,`name`,`nick_name`,`avatar`,`state`,`role_ids`,`dept_id`,`job`,`is_system`,`created_id`,`updated_id`"
 )
 
 var (
@@ -38,6 +41,8 @@ type (
 		State       int       `db:"state"`
 		RoleIds     string    `db:"role_ids"`
 		DeptId      int       `db:"dept_id"`
+		Job         string    `db:"job"`
+		IsSystem    int       `db:"is_system"`
 		CreatedId   int       `db:"created_id"`
 		UpdatedId   int       `db:"updated_id"`
 		CreatedAt   time.Time `db:"created_at"`
@@ -64,8 +69,9 @@ func newUserModel() *userModel {
 
 // Insert 插入数据
 func (m *userModel) Insert(user *User) error {
-	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?,?,?,?,?,?)", m.table, inertStr)
-	result, err := db.Exec(sqlStr, user.Username, user.Password, user.PhoneNumber, user.Email, user.Name, user.NickName, user.Avatar, user.State, user.RoleIds, user.DeptId, user.CreatedId, user.UpdatedId)
+	sqlStr := fmt.Sprintf("insert into %s (%s) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", m.table, inertStr)
+	result, err := db.Exec(sqlStr, user.Username, user.Password, user.PhoneNumber, user.Email, user.Name, user.NickName,
+		user.Avatar, user.State, user.RoleIds, user.DeptId, user.Job, user.IsSystem, user.CreatedId, user.UpdatedId)
 	if err != nil {
 		slog.Error("insert user err ", "sql", sqlStr, "err ", err.Error())
 		return err
@@ -88,8 +94,8 @@ func (m *userModel) Delete(id int) error {
 
 // Update 更新数据
 func (m *userModel) Update(user *User) error {
-	sqlStr := fmt.Sprintf("update %s set `email` = ? ,`name` = ?, `nick_name`= ? , `avatar`= ? , `role_ids` = ?, `dept_id` = ?, `updated_id` = ? where `id` = %d", m.table, user.Id)
-	_, err := db.Exec(sqlStr, user.Email, user.Name, user.NickName, user.Avatar, user.RoleIds, user.DeptId, user.UpdatedId)
+	sqlStr := fmt.Sprintf("update %s set `email` = ? ,`name` = ?, `nick_name`= ? , `avatar`= ? , `role_ids` = ?, `dept_id` = ?, `job` = ?, `updated_id` = ? where `id` = %d", m.table, user.Id)
+	_, err := db.Exec(sqlStr, user.Email, user.Name, user.NickName, user.Avatar, user.RoleIds, user.DeptId, user.Job, user.UpdatedId)
 	if err != nil {
 		slog.Error("update user err ", "sql", sqlStr, "err ", err.Error())
 		return err
@@ -113,7 +119,7 @@ func (m *userModel) Find(id int) (*User, error) {
 
 // Select 查询所有数据
 func (m *userModel) Select() ([]*User, error) {
-	sqlStr := fmt.Sprintf("select * from %s where `state` = ?", m.table)
+	sqlStr := fmt.Sprintf("select * from %s where `is_system` = 0 and `state` = ?", m.table)
 	var users []*User
 	if err := db.Select(&users, sqlStr, UserStatusEnable); err != nil {
 		slog.Error("select user err ", "sql", sqlStr, "err ", err.Error())
@@ -156,7 +162,7 @@ func (m *userModel) GetUsersByCond(cond *UserCond, pageIndex, pageSize int) ([]*
 		pageIndex = 1
 	}
 	sqlCond, args := m.buildUserCond(cond)
-	sqlStr := fmt.Sprintf("select * from %s where 1 = 1 %s limit %d,%d", m.table, sqlCond, (pageIndex-1)*pageSize, pageSize)
+	sqlStr := fmt.Sprintf("select * from %s where `is_system` = 0 %s limit %d,%d", m.table, sqlCond, (pageIndex-1)*pageSize, pageSize)
 	var users []*User
 	if err := db.Select(&users, sqlStr, args...); err != nil {
 		slog.Error("get users error ", "sql", sqlStr, "err ", err.Error())
@@ -168,7 +174,7 @@ func (m *userModel) GetUsersByCond(cond *UserCond, pageIndex, pageSize int) ([]*
 // GetUserCountCond 根据条件获取用户数量
 func (m *userModel) GetUserCountCond(cond *UserCond) (count int, err error) {
 	sqlCond, args := m.buildUserCond(cond)
-	sqlStr := fmt.Sprintf("select count(*) n from %s where 1 = 1 %s", m.table, sqlCond)
+	sqlStr := fmt.Sprintf("select count(*) from %s where `is_system` = 0 %s", m.table, sqlCond)
 	if err = db.Get(&count, sqlStr, args...); err != nil {
 		slog.Error("get user count error ", "sql", sqlStr, "err ", err.Error())
 		return
@@ -216,7 +222,7 @@ func (m *userModel) UpdateState(id, state, uid int) error {
 
 func (m *userModel) SelectByEnable() ([]*User, error) {
 	var users []*User
-	sqlStr := fmt.Sprintf("select * from %s where `state` = ?", m.table)
+	sqlStr := fmt.Sprintf("select * from %s where `is_system` = 0 and `state` = ?", m.table)
 	if err := db.Select(&users, sqlStr, UserStatusEnable); err != nil {
 		slog.Error("find user options error", "sql", sqlStr, "err ", err.Error())
 		return nil, err
@@ -229,7 +235,7 @@ func (m *userModel) SelectByIds(ids []int) ([]*User, error) {
 	if len(ids) == 0 {
 		return users, nil
 	}
-	sqlStr := fmt.Sprintf("select * from %s where `state` = ? and id in (?) ", m.table)
+	sqlStr := fmt.Sprintf("select * from %s where `is_system` = 0 and `state` = ? and id in (?) ", m.table)
 	query1, args, err := sqlx.In(sqlStr, UserStatusEnable, ids)
 	if err != nil {
 		slog.Error("batch select user bu uids error", "sql", sqlStr, "ids", ids, "err ", err.Error())
