@@ -34,6 +34,7 @@ type (
 		Username    string    `db:"username"`
 		Overview    string    `db:"overview"`
 		State       int       `db:"state"`
+		IsDeleted   int       `db:"is_deleted"`
 		CreatedId   int       `db:"created_id"`
 		UpdatedId   int       `db:"updated_id"`
 		CreatedAt   time.Time `db:"created_at"`
@@ -70,11 +71,21 @@ func (m *projectRecordModel) Create(projectRecord *ProjectRecord) error {
 	return nil
 }
 
-func (m *projectRecordModel) Delete(id int) error {
-	sqlStr := fmt.Sprintf("delete from %s where `id` = ? ", m.table)
-	_, err := db.Exec(sqlStr, id)
+func (m *projectRecordModel) Delete(id, uid int) error {
+	sqlStr := fmt.Sprintf("update %s set `is_deleted` = ? , `updated_id` = ? where `id` = %d", m.table, id)
+	_, err := db.Exec(sqlStr, ProjectDeletedYes, uid)
 	if err != nil {
 		slog.Error("delete project record err ", "sql", sqlStr, "err ", err.Error())
+		return err
+	}
+	return nil
+}
+
+func (m *projectRecordModel) DeleteByProjectId(projectId, uid int) error {
+	sqlStr := fmt.Sprintf("update %s set `is_deleted` = ? , `updated_id` = ? where `project_id` = %d", m.table, projectId)
+	_, err := db.Exec(sqlStr, ProjectDeletedYes, uid)
+	if err != nil {
+		slog.Error("delete project record by project id err ", "sql", sqlStr, "project_id", projectId, "err ", err.Error())
 		return err
 	}
 	return nil
@@ -91,9 +102,9 @@ func (m *projectRecordModel) Update(projectRecord *ProjectRecord) error {
 }
 
 func (m *projectRecordModel) Find(id int) (*ProjectRecord, error) {
-	sqlStr := fmt.Sprintf("select * from %s where `id` = ? limit 1", m.table)
+	sqlStr := fmt.Sprintf("select * from %s where `id` = ? and `is_deleted` = ? limit 1", m.table)
 	projectRecord := new(ProjectRecord)
-	if err := db.Get(projectRecord, sqlStr, id); err != nil {
+	if err := db.Get(projectRecord, sqlStr, id, ProjectDeletedNo); err != nil {
 		slog.Error("find project record err ", "sql", sqlStr, "id", id, "err ", err.Error())
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotRecord
@@ -105,8 +116,9 @@ func (m *projectRecordModel) Find(id int) (*ProjectRecord, error) {
 
 func (m *projectRecordModel) GetProjectRecordCountByCond(cond *ProjectRecordCond) (int, error) {
 	sqlCond, args := m.buildProjectRecordCond(cond)
-	sqlStr := fmt.Sprintf("select count(*) from %s where 1 = 1 %s order by created_at desc", m.table, sqlCond)
+	sqlStr := fmt.Sprintf("select count(*) from %s where `is_deleted` = ? %s order by created_at desc", m.table, sqlCond)
 	var count int
+	args = append([]interface{}{ProjectDeletedNo}, args...)
 	if err := db.Get(&count, sqlStr, args...); err != nil {
 		slog.Error("get project record count error ", "sql", sqlStr, "err ", err.Error())
 		return 0, err
@@ -119,8 +131,9 @@ func (m *projectRecordModel) GetProjectRecordByCond(cond *ProjectRecordCond, pag
 		pageIndex = 1
 	}
 	sqlCond, args := m.buildProjectRecordCond(cond)
-	sqlStr := fmt.Sprintf("select * from %s where 1 = 1 %s order by created_at desc limit %d,%d", m.table, sqlCond, (pageIndex-1)*pageSize, pageSize)
+	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ? %s order by created_at desc limit %d,%d", m.table, sqlCond, (pageIndex-1)*pageSize, pageSize)
 	var projectRecords []*ProjectRecord
+	args = append([]interface{}{ProjectDeletedNo}, args...)
 	if err := db.Select(&projectRecords, sqlStr, args...); err != nil {
 		slog.Error("get project record error ", "sql", sqlStr, "err ", err.Error())
 		return nil, err
@@ -153,9 +166,9 @@ func (m *projectRecordModel) buildProjectRecordCond(cond *ProjectRecordCond) (sq
 }
 
 func (m *projectRecordModel) GetAllByProjectId(projectId int) ([]*ProjectRecord, error) {
-	sqlStr := fmt.Sprintf("select * from %s where project_id = ?", m.table)
+	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ? and project_id = ?", m.table)
 	var projectRecords []*ProjectRecord
-	if err := db.Select(&projectRecords, sqlStr, projectId); err != nil {
+	if err := db.Select(&projectRecords, sqlStr, ProjectDeletedNo, projectId); err != nil {
 		slog.Error("get project record error ", "sql", sqlStr, "project_id", projectId, "err ", err.Error())
 		return nil, err
 	}
@@ -163,9 +176,9 @@ func (m *projectRecordModel) GetAllByProjectId(projectId int) ([]*ProjectRecord,
 }
 
 func (m *projectRecordModel) SelectByUserId(userId int) ([]*ProjectRecord, error) {
-	sqlStr := fmt.Sprintf("select * from %s where user_id = ? order by created_at desc limit %d", m.table, latestRecordCountView)
+	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ? and user_id = ? order by created_at desc limit %d", m.table, latestRecordCountView)
 	var projectRecords []*ProjectRecord
-	if err := db.Select(&projectRecords, sqlStr, userId); err != nil {
+	if err := db.Select(&projectRecords, sqlStr, ProjectDeletedNo, userId); err != nil {
 		slog.Error("get project record error ", "sql", sqlStr, "user_id", userId, "err ", err.Error())
 		return nil, err
 	}
@@ -173,9 +186,9 @@ func (m *projectRecordModel) SelectByUserId(userId int) ([]*ProjectRecord, error
 }
 
 func (m *projectRecordModel) Select() ([]*ProjectRecord, error) {
-	sqlStr := fmt.Sprintf("select * from %s where 1 = 1 order by created_at desc limit %d", m.table, latestRecordCountView*2)
+	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ? order by created_at desc limit %d", m.table, latestRecordCountView*2)
 	var projectRecords []*ProjectRecord
-	if err := db.Select(&projectRecords, sqlStr); err != nil {
+	if err := db.Select(&projectRecords, sqlStr, ProjectDeletedNo); err != nil {
 		slog.Error("get project record error ", "sql", sqlStr, "err ", err.Error())
 		return nil, err
 	}
@@ -183,9 +196,9 @@ func (m *projectRecordModel) Select() ([]*ProjectRecord, error) {
 }
 
 func (m *projectRecordModel) SelectProjectIdFromCreatedAt(at *time.Time) ([]int, error) {
-	sqlStr := fmt.Sprintf("select `project_id` from %s where created_at > ? group by `project_id` ", m.table)
+	sqlStr := fmt.Sprintf("select `project_id` from %s where `is_deleted` = ? and created_at > ? group by `project_id` ", m.table)
 	var projectIds []int
-	if err := db.Select(&projectIds, sqlStr, at); err != nil {
+	if err := db.Select(&projectIds, sqlStr, ProjectDeletedNo, at); err != nil {
 		slog.Error("get project ids from created at error ", "sql", sqlStr, "at", at, "err ", err.Error())
 		return nil, err
 	}
@@ -198,8 +211,8 @@ func (m *projectRecordModel) SelectGroupCountByUserIds(userIds []int) ([]*UserCo
 		return items, nil
 	}
 
-	sqlStr := fmt.Sprintf("select `user_id`,count(*) as `count` from %s where user_id in (?) group by user_id ", m.table)
-	query, args, err := sqlx.In(sqlStr, userIds)
+	sqlStr := fmt.Sprintf("select `user_id`,count(*) as `count` from %s where `is_deleted` = ? and user_id in (?) group by user_id ", m.table)
+	query, args, err := sqlx.In(sqlStr, ProjectDeletedNo, userIds)
 	if err != nil {
 		slog.Error("get project record error ", "sql", sqlStr, "err", err.Error())
 		return nil, err
@@ -213,8 +226,8 @@ func (m *projectRecordModel) SelectGroupCountByUserIds(userIds []int) ([]*UserCo
 }
 
 func (m *projectRecordModel) SelectByUserIds(userIds []int) ([]*ProjectRecord, error) {
-	sqlStr := fmt.Sprintf("select * from %s where user_id in (?) order by created_at desc limit %d", m.table, latestRecordCountView)
-	query, args, err := sqlx.In(sqlStr, userIds)
+	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ? and user_id in (?) order by created_at desc limit %d", m.table, latestRecordCountView)
+	query, args, err := sqlx.In(sqlStr, ProjectDeletedNo, userIds)
 	if err != nil {
 		slog.Error("get project record error ", "sql", sqlStr, "err", err.Error())
 		return nil, err
@@ -234,8 +247,8 @@ func (m *projectRecordModel) SelectByProjectIds(projectIds []int) ([]*ProjectRec
 	if len(projectIds) == 0 {
 		return projectRecords, nil
 	}
-	sqlStr := fmt.Sprintf("select * from %s where project_id in (?) order by created_at desc limit %d", m.table, latestRecordCountView)
-	query, args, err := sqlx.In(sqlStr, projectIds)
+	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ? and project_id in (?) order by created_at desc limit %d", m.table, latestRecordCountView)
+	query, args, err := sqlx.In(sqlStr, ProjectDeletedNo, projectIds)
 	if err != nil {
 		slog.Error("get project record error ", "sql", sqlStr, "err", err.Error())
 		return nil, err

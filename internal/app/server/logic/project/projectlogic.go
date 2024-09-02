@@ -448,6 +448,19 @@ func (b *bisLogic) Delete(req *ReqDeleteProject, uid int) (*RespDeleteProject, e
 	if err := model.ProjectModel.Delete(req.Id, uid); err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "删除项目失败")
 	}
+
+	if err := model.ProjectRecordModel.DeleteByProjectId(req.Id, uid); err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "删除项目记录失败")
+	}
+
+	if err := model.ProjectPersonModel.DeleteByProjectId(req.Id); err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "删除项目成员失败")
+	}
+
+	if err := model.ProjectAttachedModel.DeleteByProjectId(req.Id); err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "删除项目文件失败")
+	}
+
 	return &RespDeleteProject{}, nil
 }
 

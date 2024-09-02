@@ -185,8 +185,6 @@ func (m *projectModel) GetProjectByCond(cond *ProjectCond, pageIndex, pageSize i
 	sqlCond, args := m.buildProjectCond(cond)
 	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ?  %s order by created_at desc limit %d,%d", m.table, sqlCond, (pageIndex-1)*pageSize, pageSize)
 
-	slog.Info(sqlStr, "sqlCond", sqlCond, "args", args)
-
 	var projects []*Project
 	if err := db.Select(&projects, sqlStr, append([]interface{}{ProjectDeletedNo}, args...)...); err != nil {
 		slog.Error("get projects error ", "sql", sqlStr, "err ", err.Error())
@@ -312,7 +310,6 @@ func (m *projectModel) SelectLatestProject(beginTime *time.Time, notExistIds, ex
 	}
 
 	query := fmt.Sprintf("select * from %s where `is_deleted` = ? %s ", m.table, sqlStr)
-	slog.Info("select my project by ids error", "sql", query, "sqlStr", sqlStr, "args", args)
 
 	projects := make([]*Project, 0)
 	if err := db.Select(&projects, query, args...); err != nil {
