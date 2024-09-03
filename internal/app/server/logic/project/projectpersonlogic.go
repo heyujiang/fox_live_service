@@ -122,8 +122,8 @@ func (b *personLogic) Create(req *ReqCreateProjectPerson, uid int) (*RespCreateP
 	return &RespCreateProjectPerson{}, nil
 }
 
-func (b *personLogic) Delete(req *ReqDeleteProjectPerson) (*RespDeleteProjectPerson, error) {
-	if err := model.ProjectPersonModel.Delete(req.Id); err != nil {
+func (b *personLogic) Delete(req *ReqDeleteProjectPerson, uid int) (*RespDeleteProjectPerson, error) {
+	if err := model.ProjectPersonModel.Delete(req.Id, uid); err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "删除项目成员失败")
 	}
 

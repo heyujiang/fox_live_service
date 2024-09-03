@@ -28,6 +28,7 @@ type (
 		Filename  string    `db:"filename"`
 		Mime      string    `db:"mime"`
 		Size      int64     `db:"size"`
+		IsDeleted int       `db:"is_deleted"`
 		CreatedId int       `db:"created_id"`
 		CreatedAt time.Time `db:"created_at"`
 	}
@@ -61,9 +62,9 @@ func (m *projectAttachedModel) Create(projectAttached *ProjectAttached) error {
 	return nil
 }
 
-func (m *projectAttachedModel) Delete(id int) error {
-	sqlStr := fmt.Sprintf("delete from %s where `id` = ? ", m.table)
-	_, err := db.Exec(sqlStr, id)
+func (m *projectAttachedModel) Delete(id, uid int) error {
+	sqlStr := fmt.Sprintf("update %s set `is_deleted` = ? , `updated_id` = ? where `id` = %d", m.table, id)
+	_, err := db.Exec(sqlStr, ProjectDeletedYes, uid)
 	if err != nil {
 		slog.Error("delete project attached err ", "sql", sqlStr, "err ", err.Error())
 		return err
@@ -71,10 +72,21 @@ func (m *projectAttachedModel) Delete(id int) error {
 	return nil
 }
 
+func (m *projectAttachedModel) DeleteByProjectId(projectId int) error {
+	sqlStr := fmt.Sprintf("update %s set `is_deleted` = ? where `project_id` = %d", m.table, projectId)
+	_, err := db.Exec(sqlStr, ProjectDeletedYes)
+	if err != nil {
+		slog.Error("delete project attached by project id err ", "sql", sqlStr, "project_id", projectId, "err ", err.Error())
+		return err
+	}
+	return nil
+}
+
 func (m *projectAttachedModel) Find(id int) (*ProjectAttached, error) {
-	sqlStr := fmt.Sprintf("select * from %s where `id` = ? limit 1", m.table)
+	sqlStr := fmt.Sprintf("select * from %s where `id` = ? and `is_deleted` = ? limit 1", m.table)
 	projectAttached := new(ProjectAttached)
-	if err := db.Get(projectAttached, sqlStr, id); err != nil {
+	args := []interface{}{id, ProjectDeletedNo}
+	if err := db.Get(projectAttached, sqlStr, args...); err != nil {
 		slog.Error("find project attached err ", "sql", sqlStr, "id", id, "err ", err.Error())
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotRecord
@@ -86,7 +98,8 @@ func (m *projectAttachedModel) Find(id int) (*ProjectAttached, error) {
 
 func (m *projectAttachedModel) GetProjectAttachedByCond(cond *ProjectAttachedCond) ([]*ProjectAttached, error) {
 	sqlCond, args := m.buildProjectAttachedCond(cond)
-	sqlStr := fmt.Sprintf("select * from %s where 1 = 1 %s ", m.table, sqlCond)
+	args = append([]interface{}{ProjectDeletedNo}, args...)
+	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ? %s ", m.table, sqlCond)
 	var projectAttacheds []*ProjectAttached
 	if err := db.Select(&projectAttacheds, sqlStr, args...); err != nil {
 		slog.Error("get project attached error ", "sql", sqlStr, "err ", err.Error())
@@ -124,9 +137,10 @@ func (m *projectAttachedModel) buildProjectAttachedCond(cond *ProjectAttachedCon
 }
 
 func (m *projectAttachedModel) GetAllByProjectId(projectId int) ([]*ProjectAttached, error) {
-	sqlStr := fmt.Sprintf("select * from %s where project_id = ?", m.table)
+	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ? and project_id = ?", m.table)
 	var projectAttacheds []*ProjectAttached
-	if err := db.Select(&projectAttacheds, sqlStr, projectId); err != nil {
+	args := []interface{}{ProjectDeletedNo, projectId}
+	if err := db.Select(&projectAttacheds, sqlStr, args...); err != nil {
 		slog.Error("get project attached error ", "sql", sqlStr, "project_id", projectId, "err ", err.Error())
 		return nil, err
 	}
@@ -139,8 +153,8 @@ func (m *projectAttachedModel) SelectGroupCountByUserIds(userIds []int) ([]*User
 		return items, nil
 	}
 
-	sqlStr := fmt.Sprintf("select `user_id`,count(*) as `count` from %s where user_id in (?) group by user_id ", m.table)
-	query, args, err := sqlx.In(sqlStr, userIds)
+	sqlStr := fmt.Sprintf("select `user_id`,count(*) as `count` from %s where `is_deleted` = ? and user_id in (?) group by user_id ", m.table)
+	query, args, err := sqlx.In(sqlStr, ProjectDeletedNo, userIds)
 	if err != nil {
 		slog.Error("get project record error ", "sql", sqlStr, "err", err.Error())
 		return nil, err

@@ -100,6 +100,7 @@ func (h *projectRecordHandler) List(c *gin.Context) {
 		return
 	}
 
+	req.UserId = c.GetInt("uid")
 	res, err := project.RecordLogic.List(&req)
 	if err != nil {
 		common.ResponseErr(c, err)

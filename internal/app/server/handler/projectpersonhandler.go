@@ -39,7 +39,7 @@ func (h *projectPersonHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	res, err := project.PersonLogic.Delete(&req)
+	res, err := project.PersonLogic.Delete(&req, c.GetInt("uid"))
 	if err != nil {
 		common.ResponseErr(c, err)
 		return
