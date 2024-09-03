@@ -183,8 +183,8 @@ func (m *projectPersonModel) SelectGroupCountByUserIds(userIds []int) ([]*UserCo
 		return items, nil
 	}
 
-	sqlStr := fmt.Sprintf("select `user_id`,count(*) as `count` from %s where `is_deleted` = ? and user_id in (?) group by user_id ", m.table)
-	query, args, err := sqlx.In(sqlStr, ProjectDeletedNo, userIds)
+	sqlStr := fmt.Sprintf("select `user_id`,count(*) as `count` from %s where `is_deleted` = ? and `type` = ? and user_id in (?) group by user_id ", m.table)
+	query, args, err := sqlx.In(sqlStr, ProjectDeletedNo, ProjectPersonTypeFirst, userIds)
 	if err != nil {
 		slog.Error("get project record error ", "sql", sqlStr, "err", err.Error())
 		return nil, err

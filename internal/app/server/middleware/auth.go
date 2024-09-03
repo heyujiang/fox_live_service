@@ -3,10 +3,12 @@ package middleware
 import (
 	"errors"
 	"fox_live_service/config/global"
+	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/common"
 	"fox_live_service/pkg/errorx"
 	"fox_live_service/pkg/util/jwttokenx"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/cast"
 	"golang.org/x/exp/slog"
 	"strings"
 )
@@ -65,8 +67,24 @@ func Auth() gin.HandlerFunc {
 		//过期重新登录
 		//未过期 刷新token
 
+		user, err := model.UserModel.Find(userId)
+		if err != nil {
+			slog.Error("find user error", "userId", userId, "err", err)
+			common.ResponseErr(c, errorx.NewErrorX(errorx.ErrNoLogin, "验证用户失败"))
+			c.Abort()
+		}
+		isSuper := false
+		roleIds := strings.Split(user.RoleIds, ",")
+		for _, roleId := range roleIds {
+			if cast.ToInt(roleId) == model.SuperManagerRoleId {
+				isSuper = true
+			}
+		}
+
 		c.Set("uid", userId)
 		c.Set("username", username)
+		c.Set("isSuper", isSuper)
+
 		c.Next()
 	}
 }
