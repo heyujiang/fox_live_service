@@ -309,7 +309,7 @@ func (m *projectModel) SelectLatestProject(beginTime *time.Time, notExistIds, ex
 		args = append(args, notIds...)
 	}
 
-	query := fmt.Sprintf("select * from %s where `is_deleted` = ? %s ", m.table, sqlStr)
+	query := fmt.Sprintf("select * from %s where `is_deleted` = ? %s order by `created_at` desc", m.table, sqlStr)
 
 	projects := make([]*Project, 0)
 	if err := db.Select(&projects, query, args...); err != nil {

@@ -6,7 +6,6 @@ import (
 	"fox_live_service/config/global"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	"time"
 )
 
 type (
@@ -25,12 +24,6 @@ func init() {
 	db = sqlx.MustConnect(dbType, global.Config.GetString("Db.Mysql.DSN"))
 	db.SetMaxOpenConns(global.Config.GetInt("Db.Mysql.MaxOpenConn"))
 	db.SetMaxIdleConns(global.Config.GetInt("Db.Mysql.MaxIdleConn"))
-}
-
-type Model struct {
-	Id        int       `db:"id"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
 }
 
 func transaction(tx *sqlx.Tx, fn func() error) (err error) {
