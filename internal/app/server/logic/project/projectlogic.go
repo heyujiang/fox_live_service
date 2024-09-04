@@ -845,6 +845,7 @@ func (b *bisLogic) PersonCapacity() ([]*RespPersonCapacityItem, error) {
 	res := make([]*RespPersonCapacityItem, 0, len(resMap))
 
 	for _, v := range resMap {
+		v.Capacity = cast.ToFloat64(fmt.Sprintf("%.2f", v.Capacity))
 		res = append(res, v)
 	}
 
