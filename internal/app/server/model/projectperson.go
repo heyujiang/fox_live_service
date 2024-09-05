@@ -114,6 +114,17 @@ func (m *projectPersonModel) SelectByUserId(userId int) ([]*ProjectPerson, error
 	return projectPersons, nil
 }
 
+func (m *projectPersonModel) SelectByUserIdAndFirst(userId int) ([]*ProjectPerson, error) {
+	sqlStr := fmt.Sprintf("select * from %s where `user_id` = ? and `type` = ? and `is_deleted` = ? ", m.table)
+	var projectPersons []*ProjectPerson
+	args := []interface{}{userId, ProjectPersonTypeFirst, ProjectDeletedNo}
+	if err := db.Select(&projectPersons, sqlStr, args...); err != nil {
+		slog.Error("select project first person err ", "sql", sqlStr, "user_id", userId, "err ", err.Error())
+		return nil, err
+	}
+	return projectPersons, nil
+}
+
 func (m *projectPersonModel) BatchInsert(projectPersons []*ProjectPerson) error {
 	if len(projectPersons) == 0 {
 		return nil

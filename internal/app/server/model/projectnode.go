@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 	"golang.org/x/exp/slog"
 	"strings"
 	"time"
@@ -134,4 +135,25 @@ func (m *projectNodeModel) SelectByProjectId(projectId int) ([]*ProjectNode, err
 		return nil, err
 	}
 	return projectNodes, nil
+}
+
+// GetByProjectIds 根据项目id数组（projectIds） 查询项目节点
+func (m *projectNodeModel) GetByProjectIds(projectIds []int) ([]*ProjectRecord, error) {
+	var projectRecords []*ProjectRecord
+
+	if len(projectIds) == 0 {
+		return projectRecords, nil
+	}
+	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ? and project_id in (?) order by created_at desc", m.table)
+	query, args, err := sqlx.In(sqlStr, ProjectDeletedNo, projectIds)
+	if err != nil {
+		slog.Error("get all project node by project_ids and user_id error ", "sql", sqlStr, "projectIds", projectIds, "err", err.Error())
+		return nil, err
+	}
+
+	if err := db.Select(&projectRecords, query, args...); err != nil {
+		slog.Error("get all project node by project_ids and user_id error ", "sql", sqlStr, "projectIds", projectIds, "err", err.Error())
+		return nil, err
+	}
+	return projectRecords, nil
 }

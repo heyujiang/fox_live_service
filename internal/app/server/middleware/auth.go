@@ -73,7 +73,7 @@ func Auth() gin.HandlerFunc {
 			common.ResponseErr(c, errorx.NewErrorX(errorx.ErrNoLogin, "验证用户失败"))
 			c.Abort()
 		}
-		isSuper := false
+		isSuper, isSystem := false, false
 		roleIds := strings.Split(user.RoleIds, ",")
 		for _, roleId := range roleIds {
 			if cast.ToInt(roleId) == model.SuperManagerRoleId {
@@ -81,9 +81,14 @@ func Auth() gin.HandlerFunc {
 			}
 		}
 
+		if user.IsSystem == model.IsSystemUser {
+			isSystem = true
+		}
+
 		c.Set("uid", userId)
 		c.Set("username", username)
 		c.Set("isSuper", isSuper)
+		c.Set("isSystem", isSystem)
 
 		c.Next()
 	}

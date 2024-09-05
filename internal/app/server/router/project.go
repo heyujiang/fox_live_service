@@ -16,6 +16,7 @@ func registerProject(e *gin.Engine) {
 	project.GET("/:id", handler.ProjectHandler.Info)
 	project.GET("", handler.ProjectHandler.List)
 	project.GET("/option", handler.ProjectHandler.Option)
+	project.GET("/export", handler.ProjectHandler.Export)
 
 	project.GET("/nodes/:id", handler.ProjectNodeHandler.List)
 	project.GET("/nodes/option/:id", handler.ProjectNodeHandler.Option)

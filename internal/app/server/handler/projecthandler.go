@@ -1,10 +1,16 @@
 package handler
 
 import (
+	"bytes"
+	"fmt"
 	"fox_live_service/internal/app/server/logic/project"
 	"fox_live_service/pkg/common"
 	"fox_live_service/pkg/errorx"
 	"github.com/gin-gonic/gin"
+	"net/http"
+	"net/url"
+	"strconv"
+	"time"
 )
 
 var ProjectHandler = newProjectHandler()
@@ -135,5 +141,30 @@ func (h *projectHandler) GetMyProject(c *gin.Context) {
 	}
 
 	common.ResponseOK(c, res)
+	return
+}
+
+func (h *projectHandler) Export(c *gin.Context) {
+	var req project.ReqFromProjectList
+	if err := c.ShouldBindQuery(&req); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
+
+	res, err := project.BisLogic.Export(&req, c.GetInt("uid"))
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+
+	c.Header("Content-Length", strconv.Itoa(len(res.Data.Bytes())))
+	c.Header("Content-Disposition", fmt.Sprintf("attachment;filename*=UTF-8''%s", url.QueryEscape("project.xlsx")))
+	c.Header("Content-Type", "application/octet-stream")
+
+	//xlsx，设置后缀为xlsx类型的表格
+	//c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	r := bytes.NewReader(res.Data.Bytes())
+	// 返回给浏览器
+	http.ServeContent(c.Writer, c.Request, "project.xlsx", time.Now(), r)
 	return
 }

@@ -1,6 +1,7 @@
 package project
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"fox_live_service/config/global"
@@ -8,6 +9,7 @@ import (
 	"fox_live_service/internal/app/server/logic/node"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
+	"fox_live_service/pkg/util/excel"
 	"github.com/spf13/cast"
 	"golang.org/x/exp/slog"
 	"strconv"
@@ -205,6 +207,10 @@ type (
 		UserId   int     `json:"userId"`
 		Username string  `json:"username"`
 		Capacity float64 `json:"capacity"`
+	}
+
+	RespExport struct {
+		Data *bytes.Buffer `json:"data"`
 	}
 )
 
@@ -858,4 +864,49 @@ func (b *bisLogic) ProjectData() error {
 	//查询所有员工
 
 	return nil
+}
+
+func (b *bisLogic) Export(req *ReqFromProjectList, uid int) (*RespExport, error) {
+	projectIds, err := b.GetMyProjectIds(uid)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
+	}
+
+	listReq := ReqProjectList{
+		ReqFromProjectList: *req,
+	}
+	cond := b.buildSearchCond(&listReq, projectIds)
+
+	projects, err := model.ProjectModel.GetAllProjectByCond(cond)
+	if err != nil {
+		slog.Error("list project get user list error", "err", err.Error())
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取项目列表错误")
+	}
+
+	exportFields := []string{
+		"项目名称", "当前节点", "容量大小", "土地情况", "投资协议", "商务条件", "电网接入情况", "项目概况", "负责人",
+	}
+
+	result := make([][]interface{}, 0, len(projects))
+	for _, v := range projects {
+		result = append(result, []interface{}{
+			v.Name,
+			v.NodeName,
+			v.Capacity,
+			v.Properties,
+			v.InvestmentAgreement,
+			v.BusinessCondition,
+			v.Connect,
+			v.Description,
+			v.Username,
+		})
+	}
+
+	res, err := excel.ExportToExcel(exportFields, result)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
+	}
+	return &RespExport{
+		Data: res,
+	}, nil
 }

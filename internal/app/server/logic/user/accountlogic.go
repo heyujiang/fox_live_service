@@ -77,10 +77,9 @@ func (a *accountLogic) UserInfo(uid int) (*RespAccountUserInfo, error) {
 	dept, err := model.DeptModel.Find(user.DeptId)
 	if err != nil {
 		slog.Error("get account user info error ： ", "uid", uid, "err", err)
-		if errors.Is(err, model.ErrNotRecord) {
-			return nil, errorx.NewErrorX(errorx.ErrCommon, "部门不存在")
+		if !errors.Is(err, model.ErrNotRecord) {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "获取账户信息出错")
 		}
-		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取账户信息出错")
 	}
 
 	return &RespAccountUserInfo{
