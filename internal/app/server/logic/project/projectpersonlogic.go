@@ -151,3 +151,24 @@ func (b *personLogic) List(req *ReqProjectPersonList) ([]*ListProjectPersonItem,
 
 	return res, nil
 }
+
+// GetUserProjectIds 获取用户所有项目的id
+// isFirst 是否只获取作为第一负责人的项目
+func (b *personLogic) GetUserProjectIds(userId int, isFirst bool) ([]int, error) {
+	projectPersons := make([]*model.ProjectPerson, 0)
+	var err error
+	if isFirst {
+		projectPersons, err = model.ProjectPersonModel.SelectByUserIdAndFirst(userId)
+	} else {
+		projectPersons, err = model.ProjectPersonModel.SelectByUserId(userId)
+	}
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询用户项目id失败")
+	}
+
+	projectIds := make([]int, 0, len(projectPersons))
+	for _, v := range projectPersons {
+		projectIds = append(projectIds, v.ProjectId)
+	}
+	return projectIds, nil
+}

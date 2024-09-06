@@ -100,7 +100,9 @@ func (h *projectRecordHandler) List(c *gin.Context) {
 		return
 	}
 
-	req.UserId = c.GetInt("uid")
+	if !c.GetBool("isSuper") {
+		req.UserId = c.GetInt("uid")
+	}
 	res, err := project.RecordLogic.List(&req)
 	if err != nil {
 		common.ResponseErr(c, err)

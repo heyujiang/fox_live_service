@@ -115,6 +115,17 @@ func (m *projectPersonModel) SelectByUserId(userId int) ([]*ProjectPerson, error
 	return projectPersons, nil
 }
 
+func (m *projectPersonModel) SelectByUserIdAndFirst(userId int) ([]*ProjectPerson, error) {
+	sqlStr := fmt.Sprintf("select * from %s where `user_id` = ? and `type` = ? and `is_deleted` = ? ", m.table)
+	var projectPersons []*ProjectPerson
+	args := []interface{}{userId, ProjectPersonTypeFirst, ProjectDeletedNo}
+	if err := db.Select(&projectPersons, sqlStr, args...); err != nil {
+		slog.Error("select project first person err ", "sql", sqlStr, "user_id", userId, "err ", err.Error())
+		return nil, err
+	}
+	return projectPersons, nil
+}
+
 func (m *projectPersonModel) BatchInsert(projectPersons []*ProjectPerson) error {
 	if len(projectPersons) == 0 {
 		return nil
@@ -184,8 +195,8 @@ func (m *projectPersonModel) SelectGroupCountByUserIds(userIds []int) ([]*UserCo
 		return items, nil
 	}
 
-	sqlStr := fmt.Sprintf("select `user_id`,count(*) as `count` from %s where `is_deleted` = ? and user_id in (?) group by user_id ", m.table)
-	query, args, err := sqlx.In(sqlStr, ProjectDeletedNo, userIds)
+	sqlStr := fmt.Sprintf("select `user_id`,count(*) as `count` from %s where `is_deleted` = ? and `type` = ? and user_id in (?) group by user_id ", m.table)
+	query, args, err := sqlx.In(sqlStr, ProjectDeletedNo, ProjectPersonTypeFirst, userIds)
 	if err != nil {
 		slog.Error("get project record error ", "sql", sqlStr, "err", err.Error())
 		return nil, err

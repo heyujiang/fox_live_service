@@ -166,3 +166,24 @@ func (m *projectAttachedModel) SelectGroupCountByUserIds(userIds []int) ([]*User
 	}
 	return items, nil
 }
+
+// GetAllByProjectIdsAndUserId 根据项目id数组（projectIds） 和 创建时间范围（createdAts）查询 指定用户（userId）的提交记录
+func (m *projectAttachedModel) GetAllByProjectIdsAndUserId(projectIds []int, userId int, createdAts []*time.Time) ([]*ProjectRecord, error) {
+	var projectRecords []*ProjectRecord
+
+	if len(projectIds) == 0 {
+		return projectRecords, nil
+	}
+	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ? and project_id in (?) and `user_id` = ? and `created_at` >= ? and `created_at` < ? order by created_at desc", m.table)
+	query, args, err := sqlx.In(sqlStr, ProjectDeletedNo, projectIds, userId, createdAts[0], createdAts[1])
+	if err != nil {
+		slog.Error("get all project attached by project_ids and user_id error ", "sql", sqlStr, "projectIds", projectIds, "userId", userId, "createAts", createdAts, "err", err.Error())
+		return nil, err
+	}
+
+	if err := db.Select(&projectRecords, query, args...); err != nil {
+		slog.Error("get all project attached by project_ids and user_id error ", "sql", sqlStr, "projectIds", projectIds, "userId", userId, "createAts", createdAts, "err", err.Error())
+		return nil, err
+	}
+	return projectRecords, nil
+}

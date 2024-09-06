@@ -49,5 +49,6 @@ func Register() *gin.Engine {
 	registerUpload(e)
 	registerSystem(e)
 	registerHome(e)
+	registerReport(e)
 	return e
 }

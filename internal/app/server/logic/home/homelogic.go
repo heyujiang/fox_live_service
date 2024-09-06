@@ -43,7 +43,7 @@ func (b *bisLogic) UserData() (*RespUserData, error) {
 		attachedMap[user.Id] = 0
 	}
 
-	//查询所有用户的项目数
+	//查询所有用户作为第一项目负责人的项目数
 	projectItems, err := model.ProjectPersonModel.SelectGroupCountByUserIds(userIds)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询用户项目数量出错")
