@@ -678,14 +678,6 @@ func (b *bisLogic) GetMyProjectIds(uid int) ([]int, error) {
 }
 
 func (b *bisLogic) GetMyProject(uid int) ([]*ListProjectItem, error) {
-	//projectIds, err := b.GetMyProjectIds(uid)
-	//if err != nil {
-	//	return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
-	//}
-	//if len(projectIds) == 0 {
-	//	return []*ListProjectItem{}, nil
-	//}
-
 	projectPerson, err := model.ProjectPersonModel.SelectByUserId(uid)
 	if err != nil {
 		slog.Error("get user has project list error", "err", err.Error())
