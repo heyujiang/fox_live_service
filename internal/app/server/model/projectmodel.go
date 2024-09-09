@@ -274,7 +274,7 @@ func (m *projectModel) SelectByIds(ids []int) ([]*Project, error) {
 		return projects, nil
 	}
 
-	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ? and id in (?) order by created_at desc limit %d ", m.table, myProjectViewCountView)
+	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ? and id in (?) order by created_at ", m.table)
 	query, args, err := sqlx.In(sqlStr, ProjectDeletedNo, ids)
 
 	if err != nil {

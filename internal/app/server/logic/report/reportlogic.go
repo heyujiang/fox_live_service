@@ -2,6 +2,7 @@ package report
 
 import (
 	"fmt"
+	"fox_live_service/config/global"
 	"fox_live_service/internal/app/server/logic/project"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
@@ -20,14 +21,17 @@ func newReportLogic() *reportLogic {
 
 type (
 	ReqReport struct {
-		UserId    int   `from:"userId" binding:"required"`
-		StartTime int64 `from:"startTime binding" binding:"required"`
-		EndTime   int64 `from:"endTime" binding:"required"`
+		UserId    int     `form:"userId"`
+		TimeRange []int64 `form:"timeRange[]" binding:"required"`
 	}
 
 	RespReport struct {
-		Projects []ProjectBasicReport `json:"projects"`
-		Infos    []ProjectInfosReport `json:"infos"`
+		Basic         *ProjectBasicReport `json:"basic"`
+		RecordTotal   int                 `json:"recordTotal"`
+		AttachedTotal int                 `json:"attachedTotal"`
+		Nodes         []*NodeReport       `json:"nodes"`
+		Records       []*RecordReport     `json:"records"`
+		Attached      []*AttachedReport   `json:"attached"`
 	}
 
 	ProjectBasicReport struct {
@@ -48,22 +52,12 @@ type (
 		BeginTime           string  `json:"beginTime"`
 	}
 
-	ProjectInfosReport struct {
-		RecordTotal   int                  `json:"recordTotal"`
-		AttachedTotal int                  `json:"attachedTotal"`
-		Nodes         []ProjectInfosReport `json:"nodes"`
-		Records       []ProjectInfosReport `json:"records"`
-		Attached      []ProjectInfosReport `json:"attached"`
-	}
-
 	NodeReport struct {
-		Id        int           `json:"id"`
-		Node      int           `json:"node"`
-		Name      string        `json:"name"`
-		State     int           `json:"state"`
-		CreatedAt string        `json:"createdAt"`
-		UpdatedAT string        `json:"updatedAt"`
-		Children  []*NodeReport `json:"children"`
+		Id       int           `json:"id"`
+		NodeId   int           `json:"nodeId"`
+		Name     string        `json:"name"`
+		State    int           `json:"state"`
+		Children []*NodeReport `json:"children,omitempty"`
 	}
 
 	RecordReport struct {
@@ -88,7 +82,7 @@ type (
 	}
 )
 
-func (rl *reportLogic) Report(req *ReqReport) (*RespReport, error) {
+func (rl *reportLogic) Report(req *ReqReport) ([]*RespReport, error) {
 	//获取用户的所有项目
 	projectIds, err := project.PersonLogic.GetUserProjectIds(req.UserId, false)
 	if err != nil {
@@ -99,27 +93,60 @@ func (rl *reportLogic) Report(req *ReqReport) (*RespReport, error) {
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户项目出错")
 	}
-	fmt.Println(projects)
 
-	startTime := time.Unix(req.StartTime, 0)
-	endTime := time.Unix(req.EndTime, 0)
+	basicProjects := make([]*ProjectBasicReport, 0, len(projects))
+	for _, p := range projects {
+		basicProjects = append(basicProjects, &ProjectBasicReport{
+			Id:                  p.Id,
+			Name:                p.Name,
+			Description:         p.Description,
+			Attr:                p.Attr,
+			Type:                p.Type,
+			State:               p.State,
+			Capacity:            p.Capacity,
+			Properties:          p.Properties,
+			Area:                p.Area,
+			Star:                p.Star,
+			Address:             p.Address,
+			Connect:             p.Connect,
+			InvestmentAgreement: p.InvestmentAgreement,
+			BusinessCondition:   p.BusinessCondition,
+			BeginTime:           p.BeginTime.Format(global.TimeFormat),
+		})
+	}
+
+	startTime := time.UnixMilli(req.TimeRange[0])
+	endTime := time.UnixMilli(req.TimeRange[1])
 
 	//获取项目节点
 	nodes, err := model.ProjectNodeModel.GetByProjectIds(projectIds)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取项目节点出错")
 	}
-	fmt.Println(nodes)
+	fmt.Println(len(nodes))
+	nodeMap := make(map[int][]*model.ProjectNode)
+	for _, v := range nodes {
+		nodeMap[v.ProjectId] = append(nodeMap[v.ProjectId], v)
+	}
 
 	//获取用户项目提交记录
-	// userId , projectIds , createdAt range
 	records, err := model.ProjectRecordModel.GetAllByProjectIdsAndUserId(projectIds, req.UserId, []*time.Time{
 		&startTime, &endTime,
 	})
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取项目记录出错")
 	}
-	fmt.Println(records)
+	recordMap := make(map[int][]*RecordReport)
+	for _, v := range records {
+		recordMap[v.ProjectId] = append(recordMap[v.ProjectId], &RecordReport{
+			Id:        v.Id,
+			NodeName:  v.NodeName,
+			Overview:  v.Overview,
+			State:     v.State,
+			NodeId:    v.NodeId,
+			CreatedAt: v.CreatedAt.Format(global.TimeFormat),
+		})
+	}
 
 	//获取用户项目上传文件记录
 	attached, err := model.ProjectAttachedModel.GetAllByProjectIdsAndUserId(projectIds, req.UserId, []*time.Time{
@@ -128,6 +155,77 @@ func (rl *reportLogic) Report(req *ReqReport) (*RespReport, error) {
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取项目附件出错")
 	}
-	fmt.Println(attached)
-	return nil, nil
+	attachedMap := make(map[int][]*AttachedReport)
+	for _, v := range attached {
+		attachedMap[v.ProjectId] = append(attachedMap[v.ProjectId], &AttachedReport{
+			Id:        v.Id,
+			Url:       v.Url,
+			Filename:  v.Filename,
+			Mime:      v.Mime,
+			Size:      v.Size,
+			CreatedAt: v.CreatedAt.Format(global.TimeFormat),
+		})
+	}
+
+	res := make([]*RespReport, 0, len(projectIds))
+
+	for _, v := range basicProjects {
+		res = append(res, rl.genReportItem(v, nodeMap, recordMap, attachedMap))
+	}
+
+	return res, nil
+}
+
+func (rl *reportLogic) genReportItem(basis *ProjectBasicReport, nodeMap map[int][]*model.ProjectNode,
+	recordMap map[int][]*RecordReport, attachedMap map[int][]*AttachedReport) *RespReport {
+
+	records := make([]*RecordReport, 0)
+	if _, ok := recordMap[basis.Id]; ok {
+		records = recordMap[basis.Id]
+	}
+
+	nodeStateMap := make(map[int]int)
+	for _, v := range records {
+		if _, ok := nodeStateMap[v.NodeId]; !ok {
+			nodeStateMap[v.NodeId] = v.State
+		}
+	}
+
+	attached := make([]*AttachedReport, 0)
+	if _, ok := attachedMap[basis.Id]; ok {
+		attached = attachedMap[basis.Id]
+	}
+
+	return &RespReport{
+		Basic:         basis,
+		RecordTotal:   len(records),
+		AttachedTotal: len(attached),
+		Nodes:         rl.formatNodes(nodeMap[basis.Id], nodeStateMap),
+		Records:       records,
+		Attached:      attached,
+	}
+}
+
+func (rl *reportLogic) formatNodes(nodes []*model.ProjectNode, nodeState map[int]int) []*NodeReport {
+	pNodeMap := make(map[int][]*NodeReport)
+	for _, v := range nodes {
+		if _, ok := pNodeMap[v.PId]; !ok {
+			pNodeMap[v.PId] = make([]*NodeReport, 0)
+		}
+		pNodeMap[v.PId] = append(pNodeMap[v.PId], &NodeReport{
+			Id:     v.Id,
+			NodeId: v.NodeId,
+			Name:   v.Name,
+			State:  nodeState[v.NodeId],
+		})
+	}
+
+	res := make([]*NodeReport, 0, len(pNodeMap[0]))
+	for _, node := range pNodeMap[0] {
+		node.Children = pNodeMap[node.NodeId]
+		res = append(res, node)
+	}
+	fmt.Println(len(res))
+
+	return res
 }
