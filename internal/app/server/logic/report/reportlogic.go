@@ -6,6 +6,7 @@ import (
 	"fox_live_service/internal/app/server/logic/project"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
+	"fox_live_service/pkg/util/slicex"
 	"time"
 )
 
@@ -89,6 +90,22 @@ func (rl *reportLogic) Report(req *ReqReport) ([]*RespReport, error) {
 		return nil, err
 	}
 
+	startTime := time.UnixMilli(req.TimeRange[0])
+	endTime := time.UnixMilli(req.TimeRange[1])
+
+	//获取用户这个时间段内又提交记录的project
+	projectRecords, err := model.ProjectRecordModel.GetRecordByUserIdAndTimeRange(req.UserId, startTime, endTime)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户提交记录出错")
+	}
+
+	projectRecordIds := make([]int, 0, len(projectRecords))
+	for _, projectRecord := range projectRecords {
+		projectRecordIds = append(projectRecordIds, projectRecord.ProjectId)
+	}
+
+	projectIds = slicex.IntersectionInt(projectIds, projectRecordIds)
+
 	projects, err := model.ProjectModel.SelectByIds(projectIds)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户项目出错")
@@ -114,9 +131,6 @@ func (rl *reportLogic) Report(req *ReqReport) ([]*RespReport, error) {
 			BeginTime:           p.BeginTime.Format(global.TimeFormat),
 		})
 	}
-
-	startTime := time.UnixMilli(req.TimeRange[0])
-	endTime := time.UnixMilli(req.TimeRange[1])
 
 	//获取项目节点
 	nodes, err := model.ProjectNodeModel.GetByProjectIds(projectIds)

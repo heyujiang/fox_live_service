@@ -30,20 +30,17 @@ func (r *reportHandler) Report(c *gin.Context) {
 		}
 	}
 
+	if len(req.TimeRange) != 2 {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "请选择时间范围"))
+		return
+	}
+
 	if !c.GetBool("isSuper") && !c.GetBool("isSystem") { //非超级管理员和系统账户只能看到自己的数据
-		if req.UserId != c.GetInt("uid") {
-			common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "你没有权限查看他人日报"))
-			return
-		}
+		req.UserId = c.GetInt("uid")
 	} else {
 		if req.UserId == 0 {
 			req.UserId = c.GetInt("uid")
 		}
-	}
-
-	if len(req.TimeRange) != 2 {
-		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "请选择时间范围"))
-		return
 	}
 
 	res, err := report.ReportLogic.Report(&req)

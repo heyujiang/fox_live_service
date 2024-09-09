@@ -281,3 +281,20 @@ func (m *projectRecordModel) GetAllByProjectIdsAndUserId(projectIds []int, userI
 	}
 	return projectRecords, nil
 }
+
+func (m *projectRecordModel) GetRecordByUserIdAndTimeRange(uid int, startTime time.Time, endTime time.Time) ([]*ProjectRecord, error) {
+	var projectRecords []*ProjectRecord
+
+	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ? and `user_id` = ? and `created_at` >= ? and  `created_at` < ?  order by created_at desc", m.table)
+	query, args, err := sqlx.In(sqlStr, ProjectDeletedNo, uid, startTime, endTime)
+	if err != nil {
+		slog.Error("get project record error ", "sql", sqlStr, "err", err.Error())
+		return projectRecords, err
+	}
+
+	if err := db.Select(&projectRecords, query, args...); err != nil {
+		slog.Error("get project record error ", "sql", sqlStr, "userId", uid, "timeRange", []time.Time{startTime, endTime}, "err ", err.Error())
+		return nil, err
+	}
+	return projectRecords, nil
+}
