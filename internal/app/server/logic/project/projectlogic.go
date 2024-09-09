@@ -451,6 +451,14 @@ func (b *bisLogic) Delete(req *ReqDeleteProject, uid int) (*RespDeleteProject, e
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目出错")
 	}
 
+	hasProject, err := PersonLogic.CheckUserHasProject(uid, req.Id)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
+	}
+	if !hasProject {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "项目不存在")
+	}
+
 	if err := model.ProjectModel.Delete(req.Id, uid); err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "删除项目失败")
 	}
@@ -505,13 +513,21 @@ func (b *bisLogic) Update(req *ReqUpdateProject, uid int) (*RespUpdateProject, e
 	return &RespUpdateProject{}, nil
 }
 
-func (b *bisLogic) Info(req *ReqInfoProject) (*RespInfoProject, error) {
+func (b *bisLogic) Info(req *ReqInfoProject, uid int) (*RespInfoProject, error) {
 	project, err := model.ProjectModel.Find(req.Id)
 	if err != nil {
 		if errors.Is(err, model.ErrNotRecord) {
 			return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目不存在")
 		}
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目信息错误")
+	}
+
+	hasProject, err := PersonLogic.CheckUserHasProject(uid, req.Id)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
+	}
+	if !hasProject {
+		return nil, errorx.NewErrorX(errorx.ErrProjectNotExist, "项目不存在")
 	}
 
 	res := &RespInfoProject{

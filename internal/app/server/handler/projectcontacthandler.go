@@ -56,7 +56,7 @@ func (h *projectContactHandler) List(c *gin.Context) {
 		return
 	}
 
-	res, err := project.ContactLogic.List(&req)
+	res, err := project.ContactLogic.List(&req, c.GetInt("uid"))
 	if err != nil {
 		common.ResponseErr(c, err)
 		return

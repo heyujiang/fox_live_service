@@ -5,7 +5,9 @@ import (
 	"fox_live_service/config/global"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
+	"github.com/spf13/cast"
 	"golang.org/x/exp/slog"
+	"strings"
 )
 
 var PersonLogic = newPersonLogic()
@@ -130,7 +132,16 @@ func (b *personLogic) Delete(req *ReqDeleteProjectPerson, uid int) (*RespDeleteP
 	return &RespDeleteProjectPerson{}, nil
 }
 
-func (b *personLogic) List(req *ReqProjectPersonList) ([]*ListProjectPersonItem, error) {
+func (b *personLogic) List(req *ReqProjectPersonList, uid int) ([]*ListProjectPersonItem, error) {
+	hasProject, err := PersonLogic.CheckUserHasProject(uid, req.ProjectId)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
+	}
+	if !hasProject {
+		slog.Error("不属于当前项目的项目成员.", "projectId", req.ProjectId, "userId", uid)
+		return make([]*ListProjectPersonItem, 0), nil
+	}
+
 	persons, err := model.ProjectPersonModel.SelectByProjectId(req.ProjectId)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取项目成员失败")
@@ -171,4 +182,33 @@ func (b *personLogic) GetUserProjectIds(userId int, isFirst bool) ([]int, error)
 		projectIds = append(projectIds, v.ProjectId)
 	}
 	return projectIds, nil
+}
+
+// CheckUserHasProject 校验用户是否拥有此项目
+func (b *personLogic) CheckUserHasProject(uid, projectId int) (bool, error) {
+	user, err := model.UserModel.Find(uid)
+	if err != nil {
+		return false, errorx.NewErrorX(errorx.ErrCommon, "用户不存在")
+	}
+
+	if user.IsSystem == model.IsSystemUser { //系统级别账号
+		return true, nil
+	}
+
+	roleIds := cast.ToIntSlice(strings.Split(user.RoleIds, ","))
+	for _, roleId := range roleIds {
+		if roleId == model.SuperManagerRoleId { //超级管理员
+			return true, nil
+		}
+	}
+
+	_, err = model.ProjectPersonModel.FindByProjectIdAndUserId(projectId, uid)
+	if err != nil {
+		if errors.Is(err, model.ErrNotRecord) {
+			return false, nil
+		}
+		return false, errorx.NewErrorX(errorx.ErrCommon, "查询项目用户出错")
+	}
+
+	return true, nil
 }

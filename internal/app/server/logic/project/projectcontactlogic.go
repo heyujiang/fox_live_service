@@ -108,7 +108,16 @@ func (b *contactLogic) Delete(req *ReqDeleteProjectContact) (*RespDeleteProjectC
 	return &RespDeleteProjectContact{}, nil
 }
 
-func (b *contactLogic) List(req *ReqProjectContactList) ([]*ListProjectContactItem, error) {
+func (b *contactLogic) List(req *ReqProjectContactList, uid int) ([]*ListProjectContactItem, error) {
+	hasProject, err := PersonLogic.CheckUserHasProject(uid, req.ProjectId)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
+	}
+	if !hasProject {
+		slog.Error("不属于当前项目的项目成员.", "projectId", req.ProjectId, "userId", uid)
+		return make([]*ListProjectContactItem, 0), nil
+	}
+
 	contacts, err := model.ProjectContactModel.SelectByProjectId(req.ProjectId)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取项目联系人失败")

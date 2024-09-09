@@ -89,7 +89,7 @@ func (h *projectHandler) Info(c *gin.Context) {
 		return
 	}
 
-	res, err := project.BisLogic.Info(&req)
+	res, err := project.BisLogic.Info(&req, c.GetInt("uid"))
 	if err != nil {
 		common.ResponseErr(c, err)
 		return

@@ -100,10 +100,10 @@ func (h *projectRecordHandler) List(c *gin.Context) {
 		return
 	}
 
-	if !c.GetBool("isSuper") {
+	if !c.GetBool("isSuper") && !c.GetBool("isSystem") { // 不是系统或者超级管理员账号，只能看到自己的提交记录
 		req.UserId = c.GetInt("uid")
 	}
-	res, err := project.RecordLogic.List(&req)
+	res, err := project.RecordLogic.List(&req, c.GetInt("uid"))
 	if err != nil {
 		common.ResponseErr(c, err)
 		return

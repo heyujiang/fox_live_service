@@ -100,7 +100,7 @@ func (h *projectNodeHandler) List(c *gin.Context) {
 		return
 	}
 
-	res, err := project.NodeLogic.List(&req)
+	res, err := project.NodeLogic.List(&req, c.GetInt("uid"))
 	if err != nil {
 		common.ResponseErr(c, err)
 		return
