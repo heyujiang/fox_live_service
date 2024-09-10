@@ -124,13 +124,12 @@ func (b *recordLogic) Create(req *ReqCreateProjectRecord, uid int, username stri
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目错误")
 	}
 
-	hasProject, err := PersonLogic.CheckUserHasProject(uid, req.ProjectId)
+	_, err = model.ProjectPersonModel.FindByProjectIdAndUserId(req.ProjectId, uid)
 	if err != nil {
-		return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
-	}
-	if !hasProject {
-		slog.Error("不属于当前项目的项目成员.", "projectId", req.ProjectId, "userId", uid)
-		return nil, errorx.NewErrorX(errorx.ErrCommon, "不是项目成员，不能创建项目记录")
+		if errors.Is(err, model.ErrNotRecord) {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "不是项目成员，不能创建项目记录")
+		}
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目成员出错")
 	}
 
 	projectNode, err := model.ProjectNodeModel.FindByProjectIdAndNodeId(req.ProjectId, req.NodeId)
@@ -240,7 +239,7 @@ func (b *recordLogic) Delete(req *ReqDeleteProjectRecord, uid int) (*RespDeleteP
 
 func (b *recordLogic) Update(req *ReqUpdateProjectRecord, uid int) (*RespUpdateProjectRecord, error) {
 	//查询项目
-	project, err := model.ProjectRecordModel.Find(req.Id)
+	projectRecord, err := model.ProjectRecordModel.Find(req.Id)
 	if err != nil {
 		if errors.Is(err, model.ErrNotRecord) {
 			return nil, errorx.NewErrorX(errorx.ErrCommon, "项目记录不存在")
@@ -248,8 +247,12 @@ func (b *recordLogic) Update(req *ReqUpdateProjectRecord, uid int) (*RespUpdateP
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目记录错误")
 	}
 
+	if projectRecord.CreatedId != uid {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "不能修改他人提交的项目进度")
+	}
+
 	if err := model.ProjectRecordModel.Update(&model.ProjectRecord{
-		Id:        project.Id,
+		Id:        projectRecord.Id,
 		Overview:  req.Overview,
 		UpdatedId: uid,
 	}); err != nil {
