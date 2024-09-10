@@ -201,7 +201,9 @@ func (rl *reportLogic) genReportItem(basis *ProjectBasicReport, nodeMap map[int]
 	nodeStateMap := make(map[int]int)
 	for _, v := range records {
 		if _, ok := nodeStateMap[v.NodeId]; !ok {
-			nodeStateMap[v.NodeId] = v.State
+			if v.State == model.ProjectRecordStateFinished {
+				nodeStateMap[v.NodeId] = 99
+			}
 		}
 	}
 
@@ -226,11 +228,15 @@ func (rl *reportLogic) formatNodes(nodes []*model.ProjectNode, nodeState map[int
 		if _, ok := pNodeMap[v.PId]; !ok {
 			pNodeMap[v.PId] = make([]*NodeReport, 0)
 		}
+		state := v.State
+		if _, ok := nodeState[v.PId]; ok {
+			state = nodeState[v.PId]
+		}
 		pNodeMap[v.PId] = append(pNodeMap[v.PId], &NodeReport{
 			Id:     v.Id,
 			NodeId: v.NodeId,
 			Name:   v.Name,
-			State:  nodeState[v.NodeId],
+			State:  state,
 		})
 	}
 
