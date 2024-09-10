@@ -32,6 +32,7 @@ func (h *projectRecordHandler) Create(c *gin.Context) {
 	return
 }
 
+// Delete 删除项目节点进度
 func (h *projectRecordHandler) Delete(c *gin.Context) {
 	var req project.ReqDeleteProjectRecord
 	if err := c.ShouldBindUri(&req); err != nil {
@@ -39,7 +40,7 @@ func (h *projectRecordHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	res, err := project.RecordLogic.Delete(&req)
+	res, err := project.RecordLogic.Delete(&req, c.GetInt("uid"))
 	if err != nil {
 		common.ResponseErr(c, err)
 		return

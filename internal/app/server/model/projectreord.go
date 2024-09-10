@@ -298,3 +298,13 @@ func (m *projectRecordModel) GetRecordByUserIdAndTimeRange(uid int, startTime ti
 	}
 	return projectRecords, nil
 }
+
+func (m *projectRecordModel) GetAllByProjectIdAndProjectId(nodeId, projectId int) ([]*ProjectRecord, error) {
+	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ? and project_id = ? and `node_id` = ? ", m.table)
+	var projectRecords []*ProjectRecord
+	if err := db.Select(&projectRecords, sqlStr, ProjectDeletedNo, projectId, nodeId); err != nil {
+		slog.Error("get project record error ", "sql", sqlStr, "project_id", projectId, "node_id", nodeId, "err ", err.Error())
+		return nil, err
+	}
+	return projectRecords, nil
+}

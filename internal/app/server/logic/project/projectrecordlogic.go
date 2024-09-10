@@ -189,7 +189,52 @@ func (b *recordLogic) Create(req *ReqCreateProjectRecord, uid int, username stri
 	return &RespCreateProjectRecord{}, nil
 }
 
-func (b *recordLogic) Delete(req *ReqDeleteProjectRecord) (*RespDeleteProjectRecord, error) {
+// Delete 删除项目节点进度
+func (b *recordLogic) Delete(req *ReqDeleteProjectRecord, uid int) (*RespDeleteProjectRecord, error) {
+	record, err := model.ProjectRecordModel.Find(req.Id)
+	if err != nil {
+		if errors.Is(err, model.ErrNotRecord) {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "进度不存在")
+		}
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "进度查询出错")
+	}
+
+	if record.CreatedId != uid {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "不能删除他人提交的项目进度")
+	}
+
+	//获取当前进度的项目节点
+	pNode, err := model.ProjectNodeModel.FindByProjectIdAndNodeId(record.ProjectId, record.NodeId)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "项目节点查询出错")
+	}
+
+	records, err := model.ProjectRecordModel.GetAllByProjectIdAndProjectId(record.NodeId, record.ProjectId)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "项目节点进度查询出错")
+	}
+
+	projectNodeState := model.ProjectNodeStateWaitBegin
+	for _, v := range records {
+		if v.Id != record.Id {
+			if v.State == model.ProjectRecordStateFinished {
+				projectNodeState = model.ProjectNodeStateFinished
+				break
+			} else {
+				projectNodeState = model.ProjectNodeStateInProcess
+			}
+		}
+	}
+
+	if err := model.ProjectRecordModel.Delete(record.Id, uid); err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "删除项目记录出错")
+	}
+	if pNode.State != projectNodeState {
+		if err := model.ProjectNodeModel.UpdateProjectNodeState(pNode.Id, projectNodeState, uid); err != nil {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "修改项目节点状态出错")
+		}
+	}
+
 	return &RespDeleteProjectRecord{}, nil
 }
 
