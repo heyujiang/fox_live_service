@@ -1,7 +1,6 @@
 package report
 
 import (
-	"fmt"
 	"fox_live_service/config/global"
 	"fox_live_service/internal/app/server/logic/project"
 	"fox_live_service/internal/app/server/model"
@@ -137,7 +136,7 @@ func (rl *reportLogic) Report(req *ReqReport) ([]*RespReport, error) {
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取项目节点出错")
 	}
-	fmt.Println(len(nodes))
+
 	nodeMap := make(map[int][]*model.ProjectNode)
 	for _, v := range nodes {
 		nodeMap[v.ProjectId] = append(nodeMap[v.ProjectId], v)
@@ -228,9 +227,10 @@ func (rl *reportLogic) formatNodes(nodes []*model.ProjectNode, nodeState map[int
 		if _, ok := pNodeMap[v.PId]; !ok {
 			pNodeMap[v.PId] = make([]*NodeReport, 0)
 		}
+
 		state := v.State
-		if _, ok := nodeState[v.PId]; ok {
-			state = nodeState[v.PId]
+		if _, ok := nodeState[v.NodeId]; ok {
+			state = nodeState[v.NodeId]
 		}
 		pNodeMap[v.PId] = append(pNodeMap[v.PId], &NodeReport{
 			Id:     v.Id,
@@ -245,7 +245,6 @@ func (rl *reportLogic) formatNodes(nodes []*model.ProjectNode, nodeState map[int
 		node.Children = pNodeMap[node.NodeId]
 		res = append(res, node)
 	}
-	fmt.Println(len(res))
 
 	return res
 }
