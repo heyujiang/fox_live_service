@@ -482,7 +482,7 @@ func (b *bisLogic) Update(req *ReqUpdateProject, uid int) (*RespUpdateProject, e
 	_, err := model.ProjectModel.Find(req.Id)
 	if err != nil {
 		if errors.Is(err, model.ErrNotRecord) {
-			return nil, errorx.NewErrorX(errorx.ErrCommon, "删除项目不存在")
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "项目不存在")
 		}
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目出错")
 	}
@@ -517,7 +517,7 @@ func (b *bisLogic) Info(req *ReqInfoProject, uid int) (*RespInfoProject, error) 
 	project, err := model.ProjectModel.Find(req.Id)
 	if err != nil {
 		if errors.Is(err, model.ErrNotRecord) {
-			return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目不存在")
+			return nil, errorx.NewErrorX(errorx.ErrProjectNotExist, "查询项目不存在")
 		}
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目信息错误")
 	}
@@ -639,16 +639,31 @@ func (b *bisLogic) buildSearchCond(req *ReqProjectList, projectIds []int) *model
 	}
 
 	if len(req.CreatedAt) == 2 {
-		cond.CreatedAt = []time.Time{time.Unix(req.CreatedAt[0], 0), time.Unix(req.CreatedAt[1], 0)}
+		cond.CreatedAt = []time.Time{time.UnixMilli(req.CreatedAt[0]), time.UnixMilli(req.CreatedAt[1])}
 	}
 
 	return cond
 }
 
-func (b *bisLogic) Option(req *ReqProjectOption) ([]*RespProjectOption, error) {
-	projects, err := model.ProjectModel.Select()
-	if err != nil {
-		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取项目错误")
+// Option 获取项目选项 uid 用户id ， isALL 是否获取所有项目
+func (b *bisLogic) Option(uid int, isAll bool) ([]*RespProjectOption, error) {
+	projects := make([]*model.Project, 0)
+	var err error
+	if isAll {
+		projects, err = model.ProjectModel.Select()
+		if err != nil {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "获取项目错误")
+		}
+	} else {
+		projectIds, err := PersonLogic.GetUserProjectIds(uid, false)
+		if err != nil {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户项目列表错误")
+		}
+
+		projects, err = model.ProjectModel.SelectByIds(projectIds)
+		if err != nil {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户项目列表错误")
+		}
 	}
 
 	res := make([]*RespProjectOption, 0, len(projects))

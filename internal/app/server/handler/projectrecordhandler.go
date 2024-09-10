@@ -76,23 +76,6 @@ func (h *projectRecordHandler) Update(c *gin.Context) {
 	return
 }
 
-func (h *projectRecordHandler) Info(c *gin.Context) {
-	var req project.ReqInfoProjectRecord
-	if err := c.ShouldBindUri(&req); err != nil {
-		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
-		return
-	}
-
-	res, err := project.RecordLogic.Info(&req)
-	if err != nil {
-		common.ResponseErr(c, err)
-		return
-	}
-
-	common.ResponseOK(c, res)
-	return
-}
-
 func (h *projectRecordHandler) List(c *gin.Context) {
 	var req project.ReqProjectRecordList
 	if err := c.ShouldBindQuery(&req); err != nil {

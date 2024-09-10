@@ -116,14 +116,9 @@ func (h *projectHandler) List(c *gin.Context) {
 	return
 }
 
+// Option 获取用户项目筛选项列表API
 func (h *projectHandler) Option(c *gin.Context) {
-	var req project.ReqProjectOption
-	if err := c.ShouldBindQuery(&req); err != nil {
-		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
-		return
-	}
-
-	res, err := project.BisLogic.Option(&req)
+	res, err := project.BisLogic.Option(c.GetInt("uid"), c.GetBool("isSuper") || c.GetBool("isSystem"))
 	if err != nil {
 		common.ResponseErr(c, err)
 		return

@@ -258,7 +258,7 @@ func (n *nodeLogic) GetAllTreeNodes(projectId int) ([]*TreeNodeItem, error) {
 	return nodePIdMap[0], nil
 }
 
-func (n *nodeLogic) Option(req *ReqProjectNodeOption) ([]*RespProjectNodeOption, error) {
+func (n *nodeLogic) Option(req *ReqProjectNodeOption, uid int) ([]*RespProjectNodeOption, error) {
 	if req.ProjectId == 0 {
 		return []*RespProjectNodeOption{}, nil
 	}
@@ -269,6 +269,15 @@ func (n *nodeLogic) Option(req *ReqProjectNodeOption) ([]*RespProjectNodeOption,
 			return nil, errorx.NewErrorX(errorx.ErrCommon, "项目不存在")
 		}
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目出错")
+	}
+
+	hasProject, err := PersonLogic.CheckUserHasProject(uid, req.ProjectId)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
+	}
+	if !hasProject {
+		slog.Error("不属于当前项目的项目成员.", "projectId", req.ProjectId, "userId", uid)
+		return []*RespProjectNodeOption{}, nil
 	}
 
 	nodes, err := n.GetAllTreeNodes(req.ProjectId)

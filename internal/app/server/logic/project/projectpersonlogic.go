@@ -78,18 +78,8 @@ func newPersonLogic() *personLogic {
 }
 
 func (b *personLogic) Create(req *ReqCreateProjectPerson, uid int) (*RespCreateProjectPerson, error) {
-
 	if req.Type == model.ProjectPersonTypeFirst {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "不能添加第一负责人")
-	}
-
-	user, err := model.UserModel.Find(req.UserId)
-	if err != nil {
-		slog.Error("create project person get user error ", "id", req.UserId, "err", err)
-		if errors.Is(err, model.ErrNotRecord) {
-			return nil, errorx.NewErrorX(errorx.ErrCommon, "用户不存在")
-		}
-		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询用户错误")
 	}
 
 	project, err := model.ProjectModel.Find(req.ProjectId)
@@ -99,6 +89,24 @@ func (b *personLogic) Create(req *ReqCreateProjectPerson, uid int) (*RespCreateP
 			return nil, errorx.NewErrorX(errorx.ErrCommon, "项目不存在")
 		}
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目错误")
+	}
+
+	hasProject, err := PersonLogic.CheckUserHasProject(uid, req.ProjectId)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
+	}
+	if !hasProject {
+		slog.Error("不属于当前项目的项目成员.", "projectId", req.ProjectId, "userId", uid)
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "不是项目成员，不能添加项目成员")
+	}
+
+	user, err := model.UserModel.Find(req.UserId)
+	if err != nil {
+		slog.Error("create project person get user error ", "id", req.UserId, "err", err)
+		if errors.Is(err, model.ErrNotRecord) {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "用户不存在")
+		}
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询用户错误")
 	}
 
 	//查询用户是否为项目成员

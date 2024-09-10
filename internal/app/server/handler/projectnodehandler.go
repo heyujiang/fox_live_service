@@ -117,7 +117,7 @@ func (h *projectNodeHandler) Option(c *gin.Context) {
 		return
 	}
 
-	res, err := project.NodeLogic.Option(&req)
+	res, err := project.NodeLogic.Option(&req, c.GetInt("uid"))
 	if err != nil {
 		common.ResponseErr(c, err)
 		return

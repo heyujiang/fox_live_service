@@ -16,5 +16,5 @@ func registerNode(e *gin.Engine) {
 	node.GET("/:id", handler.NodeHandler.Info)
 	node.GET("", handler.NodeHandler.List)
 	node.GET("/parent", handler.NodeHandler.Parent)
-	node.GET("/options", handler.NodeHandler.Options) // 删除用户
+	node.GET("/options", handler.NodeHandler.Options)
 }
