@@ -79,7 +79,14 @@ func newPersonLogic() *personLogic {
 
 func (b *personLogic) Create(req *ReqCreateProjectPerson, uid int) (*RespCreateProjectPerson, error) {
 	if req.Type == model.ProjectPersonTypeFirst {
-		return nil, errorx.NewErrorX(errorx.ErrCommon, "不能添加第一负责人")
+		_, err := model.ProjectPersonModel.FindFirst(req.ProjectId)
+		if err != nil {
+			if !errors.Is(err, model.ErrNotRecord) {
+				return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目第一负责人出错")
+			}
+		} else {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "项目已有第一负责人")
+		}
 	}
 
 	project, err := model.ProjectModel.Find(req.ProjectId)
@@ -98,6 +105,17 @@ func (b *personLogic) Create(req *ReqCreateProjectPerson, uid int) (*RespCreateP
 	if !hasProject {
 		slog.Error("不属于当前项目的项目成员.", "projectId", req.ProjectId, "userId", uid)
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "不是项目成员，不能添加项目成员")
+	}
+
+	if req.Type == model.ProjectPersonTypeFirst {
+		_, err := model.ProjectPersonModel.FindFirst(req.ProjectId)
+		if err != nil {
+			if !errors.Is(err, model.ErrNotRecord) {
+				return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目第一负责人出错")
+			}
+		} else {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "项目已有第一负责人")
+		}
 	}
 
 	user, err := model.UserModel.Find(req.UserId)
@@ -129,12 +147,39 @@ func (b *personLogic) Create(req *ReqCreateProjectPerson, uid int) (*RespCreateP
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "创建项目成员失败")
 	}
 
+	if req.Type == model.ProjectPersonTypeFirst {
+		if err := model.ProjectModel.UpdateFirstPerson(req.ProjectId, user.Id, user.Username, uid); err != nil {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "更新项目负责人出错")
+		}
+	}
+
 	return &RespCreateProjectPerson{}, nil
 }
 
 func (b *personLogic) Delete(req *ReqDeleteProjectPerson, uid int) (*RespDeleteProjectPerson, error) {
+	proPerson, err := model.ProjectPersonModel.Find(req.Id)
+	if err != nil {
+		if errors.Is(err, model.ErrNotRecord) {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "项目成员不存在")
+		} else {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "查询成员出错")
+		}
+	}
+
+	hasProject, err := PersonLogic.CheckUserHasProject(uid, proPerson.ProjectId)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
+	}
+	if !hasProject {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "不属于当前项目的项目成员")
+	}
+
 	if err := model.ProjectPersonModel.Delete(req.Id, uid); err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "删除项目成员失败")
+	}
+
+	if err := model.ProjectModel.UpdateFirstPerson(proPerson.ProjectId, 0, "", uid); err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "更新项目负责人出错")
 	}
 
 	return &RespDeleteProjectPerson{}, nil
