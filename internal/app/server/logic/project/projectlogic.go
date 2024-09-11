@@ -141,6 +141,7 @@ type (
 	ReqProjectList struct {
 		logic.ReqPage
 		ReqFromProjectList
+		SortField string `form:"sortField"` //fieldA_asc,fieldB_desc
 	}
 
 	ReqFromProjectList struct {
@@ -575,7 +576,8 @@ func (b *bisLogic) List(req *ReqProjectList, uid int) (*RespProjectList, error) 
 		slog.Error("list project get user count error", "err", err.Error())
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取项目列表错误")
 	}
-	projects, err := model.ProjectModel.GetProjectByCond(cond, req.Page, req.Size)
+
+	projects, err := model.ProjectModel.GetProjectByCond(cond, logic.GenSortMap(req.SortField), req.Page, req.Size)
 	if err != nil {
 		slog.Error("list project get user list error", "err", err.Error())
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取项目列表错误")

@@ -188,12 +188,12 @@ func (m *projectModel) Select() ([]*Project, error) {
 	return projects, nil
 }
 
-func (m *projectModel) GetProjectByCond(cond *ProjectCond, pageIndex, pageSize int) ([]*Project, error) {
+func (m *projectModel) GetProjectByCond(cond *ProjectCond, sortCond string, pageIndex, pageSize int) ([]*Project, error) {
 	if pageIndex < 1 {
 		pageIndex = 1
 	}
 	sqlCond, args := m.buildProjectCond(cond)
-	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ?  %s order by created_at desc limit %d,%d", m.table, sqlCond, (pageIndex-1)*pageSize, pageSize)
+	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ?  %s order by %s created_at desc limit %d,%d", m.table, sqlCond, sortCond, (pageIndex-1)*pageSize, pageSize)
 
 	var projects []*Project
 	if err := db.Select(&projects, sqlStr, append([]interface{}{ProjectDeletedNo}, args...)...); err != nil {
