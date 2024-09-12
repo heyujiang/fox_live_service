@@ -205,14 +205,14 @@ func (m *projectRecordModel) SelectProjectIdFromCreatedAt(at *time.Time) ([]int,
 	return projectIds, nil
 }
 
-func (m *projectRecordModel) SelectGroupCountByUserIds(userIds []int) ([]*UserCountItem, error) {
+func (m *projectRecordModel) SelectGroupCountByUserIds(userIds []int, startTime, endTime time.Time) ([]*UserCountItem, error) {
 	items := make([]*UserCountItem, 0)
 	if len(userIds) == 0 {
 		return items, nil
 	}
 
-	sqlStr := fmt.Sprintf("select `user_id`,count(*) as `count` from %s where `is_deleted` = ? and user_id in (?) group by user_id ", m.table)
-	query, args, err := sqlx.In(sqlStr, ProjectDeletedNo, userIds)
+	sqlStr := fmt.Sprintf("select `user_id`,count(*) as `count` from %s where `is_deleted` = ? and `created_at` >= ? and `created_at` < ? and user_id in (?) group by user_id ", m.table)
+	query, args, err := sqlx.In(sqlStr, ProjectDeletedNo, startTime, endTime, userIds)
 	if err != nil {
 		slog.Error("get project record error ", "sql", sqlStr, "err", err.Error())
 		return nil, err

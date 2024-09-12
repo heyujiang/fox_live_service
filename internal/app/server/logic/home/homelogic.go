@@ -3,6 +3,7 @@ package home
 import (
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
+	"time"
 )
 
 var BisLogic = newBisLogic()
@@ -16,13 +17,23 @@ type (
 		RecordCounts   []int    `json:"recordCounts"`
 		AttachedCounts []int    `json:"attachedCounts"`
 	}
+
+	ReqUserData struct {
+		TimeRange []int64 `form:"timeRange[]"`
+	}
 )
 
 func newBisLogic() *bisLogic {
 	return &bisLogic{}
 }
 
-func (b *bisLogic) UserData() (*RespUserData, error) {
+func (b *bisLogic) UserData(req *ReqUserData) (*RespUserData, error) {
+	if len(req.TimeRange) != 2 {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "请选择时间范围")
+	}
+	startTimes := time.UnixMilli(req.TimeRange[0])
+	endTime := time.UnixMilli(req.TimeRange[1])
+
 	//查询所有员工
 	users, err := model.UserModel.Select()
 	if err != nil {
@@ -53,7 +64,7 @@ func (b *bisLogic) UserData() (*RespUserData, error) {
 	}
 
 	//查询所有用户的记录数量
-	recordItems, err := model.ProjectRecordModel.SelectGroupCountByUserIds(userIds)
+	recordItems, err := model.ProjectRecordModel.SelectGroupCountByUserIds(userIds, startTimes, endTime)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询用户记录数量出错")
 	}
@@ -62,7 +73,7 @@ func (b *bisLogic) UserData() (*RespUserData, error) {
 	}
 
 	//查询所有用户的文件数量
-	attachedItems, err := model.ProjectAttachedModel.SelectGroupCountByUserIds(userIds)
+	attachedItems, err := model.ProjectAttachedModel.SelectGroupCountByUserIds(userIds, startTimes, endTime)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询文件项目数量出错")
 	}
