@@ -6,11 +6,12 @@ import (
 	"fox_live_service/internal/app/server/logic/project"
 	"fox_live_service/pkg/common"
 	"fox_live_service/pkg/errorx"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 var ProjectHandler = newProjectHandler()
@@ -158,7 +159,7 @@ func (h *projectHandler) Export(c *gin.Context) {
 	}
 
 	c.Header("Content-Length", strconv.Itoa(len(res.Data.Bytes())))
-	c.Header("Content-Disposition", fmt.Sprintf("attachment;filename*=UTF-8''%s", url.QueryEscape("project.xlsx")))
+	c.Header("Content-Disposition", fmt.Sprintf("attachment;filename*=UTF-8''%s", url.QueryEscape("京杭能源项目列表.xlsx")))
 	c.Header("Content-Type", "application/octet-stream")
 
 	//xlsx，设置后缀为xlsx类型的表格
