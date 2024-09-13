@@ -775,7 +775,10 @@ func (b *bisLogic) ViewCount() (*RespProjectViewCount, error) {
 	now := time.Now()
 	monthTime := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
 	for _, v := range projects {
-		res.TotalCapacity += v.Capacity
+		if v.State != model.ProjectStateStop {
+			res.TotalCapacity += v.Capacity
+		}
+
 		if v.Star == 3 {
 			res.ThreeStartProject++
 		}
