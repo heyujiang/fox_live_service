@@ -1,11 +1,11 @@
 package report
 
 import (
-	"fmt"
 	"fox_live_service/config/global"
 	"fox_live_service/internal/app/server/logic/project"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
+	"fox_live_service/pkg/util/slicex"
 	"time"
 )
 
@@ -89,6 +89,22 @@ func (rl *reportLogic) Report(req *ReqReport) ([]*RespReport, error) {
 		return nil, err
 	}
 
+	startTime := time.UnixMilli(req.TimeRange[0])
+	endTime := time.UnixMilli(req.TimeRange[1])
+
+	//获取用户这个时间段内又提交记录的project
+	projectRecords, err := model.ProjectRecordModel.GetRecordByUserIdAndTimeRange(req.UserId, startTime, endTime)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户提交记录出错")
+	}
+
+	projectRecordIds := make([]int, 0, len(projectRecords))
+	for _, projectRecord := range projectRecords {
+		projectRecordIds = append(projectRecordIds, projectRecord.ProjectId)
+	}
+
+	projectIds = slicex.IntersectionInt(projectIds, projectRecordIds)
+
 	projects, err := model.ProjectModel.SelectByIds(projectIds)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取用户项目出错")
@@ -115,15 +131,12 @@ func (rl *reportLogic) Report(req *ReqReport) ([]*RespReport, error) {
 		})
 	}
 
-	startTime := time.UnixMilli(req.TimeRange[0])
-	endTime := time.UnixMilli(req.TimeRange[1])
-
 	//获取项目节点
 	nodes, err := model.ProjectNodeModel.GetByProjectIds(projectIds)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取项目节点出错")
 	}
-	fmt.Println(len(nodes))
+
 	nodeMap := make(map[int][]*model.ProjectNode)
 	for _, v := range nodes {
 		nodeMap[v.ProjectId] = append(nodeMap[v.ProjectId], v)
@@ -187,7 +200,9 @@ func (rl *reportLogic) genReportItem(basis *ProjectBasicReport, nodeMap map[int]
 	nodeStateMap := make(map[int]int)
 	for _, v := range records {
 		if _, ok := nodeStateMap[v.NodeId]; !ok {
-			nodeStateMap[v.NodeId] = v.State
+			if v.State == model.ProjectRecordStateFinished {
+				nodeStateMap[v.NodeId] = 99
+			}
 		}
 	}
 
@@ -212,11 +227,16 @@ func (rl *reportLogic) formatNodes(nodes []*model.ProjectNode, nodeState map[int
 		if _, ok := pNodeMap[v.PId]; !ok {
 			pNodeMap[v.PId] = make([]*NodeReport, 0)
 		}
+
+		state := v.State
+		if _, ok := nodeState[v.NodeId]; ok {
+			state = nodeState[v.NodeId]
+		}
 		pNodeMap[v.PId] = append(pNodeMap[v.PId], &NodeReport{
 			Id:     v.Id,
 			NodeId: v.NodeId,
 			Name:   v.Name,
-			State:  nodeState[v.NodeId],
+			State:  state,
 		})
 	}
 
@@ -225,7 +245,6 @@ func (rl *reportLogic) formatNodes(nodes []*model.ProjectNode, nodeState map[int
 		node.Children = pNodeMap[node.NodeId]
 		res = append(res, node)
 	}
-	fmt.Println(len(res))
 
 	return res
 }

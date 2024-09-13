@@ -56,7 +56,7 @@ func (h *projectPersonHandler) List(c *gin.Context) {
 		return
 	}
 
-	res, err := project.PersonLogic.List(&req)
+	res, err := project.PersonLogic.List(&req, c.GetInt("uid"))
 	if err != nil {
 		common.ResponseErr(c, err)
 		return

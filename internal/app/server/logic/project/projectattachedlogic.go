@@ -5,6 +5,7 @@ import (
 	"fox_live_service/config/global"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
+	"golang.org/x/exp/slog"
 )
 
 var AttachedLogic = newAttachedLogic()
@@ -97,6 +98,15 @@ func (b *attachedLogic) Create(req *ReqCreateProjectAttached, uid int) (*RespCre
 			return nil, errorx.NewErrorX(errorx.ErrCommon, "项目不存在")
 		}
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目出错")
+	}
+
+	hasProject, err := PersonLogic.CheckUserHasProject(uid, record.ProjectId)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
+	}
+	if !hasProject {
+		slog.Error("不属于当前项目的项目成员.", "projectId", record.ProjectId, "userId", uid)
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "不是项目成员，不能上传项目附件")
 	}
 
 	if err := model.ProjectAttachedModel.Create(&model.ProjectAttached{

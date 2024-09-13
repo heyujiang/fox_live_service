@@ -32,6 +32,7 @@ func (h *projectRecordHandler) Create(c *gin.Context) {
 	return
 }
 
+// Delete 删除项目节点进度
 func (h *projectRecordHandler) Delete(c *gin.Context) {
 	var req project.ReqDeleteProjectRecord
 	if err := c.ShouldBindUri(&req); err != nil {
@@ -39,7 +40,7 @@ func (h *projectRecordHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	res, err := project.RecordLogic.Delete(&req)
+	res, err := project.RecordLogic.Delete(&req, c.GetInt("uid"))
 	if err != nil {
 		common.ResponseErr(c, err)
 		return
@@ -76,23 +77,6 @@ func (h *projectRecordHandler) Update(c *gin.Context) {
 	return
 }
 
-func (h *projectRecordHandler) Info(c *gin.Context) {
-	var req project.ReqInfoProjectRecord
-	if err := c.ShouldBindUri(&req); err != nil {
-		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
-		return
-	}
-
-	res, err := project.RecordLogic.Info(&req)
-	if err != nil {
-		common.ResponseErr(c, err)
-		return
-	}
-
-	common.ResponseOK(c, res)
-	return
-}
-
 func (h *projectRecordHandler) List(c *gin.Context) {
 	var req project.ReqProjectRecordList
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -100,10 +84,10 @@ func (h *projectRecordHandler) List(c *gin.Context) {
 		return
 	}
 
-	if !c.GetBool("isSuper") {
+	if !c.GetBool("isSuper") && !c.GetBool("isSystem") { // 不是系统或者超级管理员账号，只能看到自己的提交记录
 		req.UserId = c.GetInt("uid")
 	}
-	res, err := project.RecordLogic.List(&req)
+	res, err := project.RecordLogic.List(&req, c.GetInt("uid"))
 	if err != nil {
 		common.ResponseErr(c, err)
 		return

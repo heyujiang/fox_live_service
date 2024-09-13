@@ -108,7 +108,20 @@ func (b *contactLogic) Delete(req *ReqDeleteProjectContact) (*RespDeleteProjectC
 	return &RespDeleteProjectContact{}, nil
 }
 
-func (b *contactLogic) List(req *ReqProjectContactList) ([]*ListProjectContactItem, error) {
+func (b *contactLogic) List(req *ReqProjectContactList, uid int, isSuper bool) ([]*ListProjectContactItem, error) {
+	if !isSuper {
+		firstPerson, err := model.ProjectPersonModel.FindFirst(req.ProjectId)
+		if err != nil {
+			if errors.Is(err, model.ErrNotRecord) { // 没有第一负责人
+				return []*ListProjectContactItem{}, nil
+			}
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "获取项目第一负责人失败")
+		}
+		if firstPerson.UserId != uid { //不是项目第一负责人 且 非超级管理员
+			return []*ListProjectContactItem{}, nil
+		}
+	}
+
 	contacts, err := model.ProjectContactModel.SelectByProjectId(req.ProjectId)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取项目联系人失败")

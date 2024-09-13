@@ -124,6 +124,14 @@ func (b *recordLogic) Create(req *ReqCreateProjectRecord, uid int, username stri
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目错误")
 	}
 
+	_, err = model.ProjectPersonModel.FindByProjectIdAndUserId(req.ProjectId, uid)
+	if err != nil {
+		if errors.Is(err, model.ErrNotRecord) {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "不是项目成员，不能创建项目记录")
+		}
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目成员出错")
+	}
+
 	projectNode, err := model.ProjectNodeModel.FindByProjectIdAndNodeId(req.ProjectId, req.NodeId)
 	if err != nil {
 		if errors.Is(err, model.ErrNotRecord) {
@@ -180,13 +188,58 @@ func (b *recordLogic) Create(req *ReqCreateProjectRecord, uid int, username stri
 	return &RespCreateProjectRecord{}, nil
 }
 
-func (b *recordLogic) Delete(req *ReqDeleteProjectRecord) (*RespDeleteProjectRecord, error) {
+// Delete 删除项目节点进度
+func (b *recordLogic) Delete(req *ReqDeleteProjectRecord, uid int) (*RespDeleteProjectRecord, error) {
+	record, err := model.ProjectRecordModel.Find(req.Id)
+	if err != nil {
+		if errors.Is(err, model.ErrNotRecord) {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "进度不存在")
+		}
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "进度查询出错")
+	}
+
+	if record.CreatedId != uid {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "不能删除他人提交的项目进度")
+	}
+
+	//获取当前进度的项目节点
+	pNode, err := model.ProjectNodeModel.FindByProjectIdAndNodeId(record.ProjectId, record.NodeId)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "项目节点查询出错")
+	}
+
+	records, err := model.ProjectRecordModel.GetAllByProjectIdAndProjectId(record.NodeId, record.ProjectId)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "项目节点进度查询出错")
+	}
+
+	projectNodeState := model.ProjectNodeStateWaitBegin
+	for _, v := range records {
+		if v.Id != record.Id {
+			if v.State == model.ProjectRecordStateFinished {
+				projectNodeState = model.ProjectNodeStateFinished
+				break
+			} else {
+				projectNodeState = model.ProjectNodeStateInProcess
+			}
+		}
+	}
+
+	if err := model.ProjectRecordModel.Delete(record.Id, uid); err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "删除项目记录出错")
+	}
+	if pNode.State != projectNodeState {
+		if err := model.ProjectNodeModel.UpdateProjectNodeState(pNode.Id, projectNodeState, uid); err != nil {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "修改项目节点状态出错")
+		}
+	}
+
 	return &RespDeleteProjectRecord{}, nil
 }
 
 func (b *recordLogic) Update(req *ReqUpdateProjectRecord, uid int) (*RespUpdateProjectRecord, error) {
 	//查询项目
-	project, err := model.ProjectRecordModel.Find(req.Id)
+	projectRecord, err := model.ProjectRecordModel.Find(req.Id)
 	if err != nil {
 		if errors.Is(err, model.ErrNotRecord) {
 			return nil, errorx.NewErrorX(errorx.ErrCommon, "项目记录不存在")
@@ -194,8 +247,12 @@ func (b *recordLogic) Update(req *ReqUpdateProjectRecord, uid int) (*RespUpdateP
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目记录错误")
 	}
 
+	if projectRecord.CreatedId != uid {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "不能修改他人提交的项目进度")
+	}
+
 	if err := model.ProjectRecordModel.Update(&model.ProjectRecord{
-		Id:        project.Id,
+		Id:        projectRecord.Id,
 		Overview:  req.Overview,
 		UpdatedId: uid,
 	}); err != nil {
@@ -209,8 +266,33 @@ func (b *recordLogic) Info(req *ReqInfoProjectRecord) (*RespInfoProjectRecord, e
 	return &RespInfoProjectRecord{}, nil
 }
 
-func (b *recordLogic) List(req *ReqProjectRecordList) (*RespProjectRecordList, error) {
+func (b *recordLogic) List(req *ReqProjectRecordList, uid int) (*RespProjectRecordList, error) {
 	logic.VerifyReqPage(&req.ReqPage)
+
+	if req.ProjectId > 0 {
+		_, err := model.ProjectModel.Find(req.ProjectId)
+		if err != nil {
+			if errors.Is(err, model.ErrNotRecord) {
+				return nil, errorx.NewErrorX(errorx.ErrCommon, "项目不存在")
+			}
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目出错")
+		}
+
+		hasProject, err := PersonLogic.CheckUserHasProject(uid, req.ProjectId)
+		if err != nil {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
+		}
+		if !hasProject {
+			slog.Error("不属于当前项目的项目成员.", "projectId", req.ProjectId, "userId", uid)
+			return &RespProjectRecordList{
+				Page:  req.Page,
+				Size:  req.Size,
+				Count: 0,
+				List:  make([]*ListProjectRecordItem, 0),
+			}, nil
+		}
+	}
+
 	cond := b.buildSearchCond(req)
 	totalCount, err := model.ProjectRecordModel.GetProjectRecordCountByCond(cond)
 	if err != nil {

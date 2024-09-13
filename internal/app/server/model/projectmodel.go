@@ -155,6 +155,16 @@ func (m *projectModel) Update(project *Project) error {
 	return nil
 }
 
+func (m *projectModel) UpdateFirstPerson(projectId int, userId int, userName string, uid int) error {
+	sqlStr := fmt.Sprintf("update %s set  `user_id` = ? , `username` = ?, `updated_id`= ? where `id` = %d", m.table, projectId)
+	_, err := db.Exec(sqlStr, userId, userName, uid)
+	if err != nil {
+		slog.Error("update project err ", "sql", sqlStr, "err ", err.Error())
+		return err
+	}
+	return nil
+}
+
 func (m *projectModel) Find(id int) (*Project, error) {
 	sqlStr := fmt.Sprintf("select * from %s where `id` = ? and `is_deleted` = ? limit 1", m.table)
 	project := new(Project)
@@ -178,12 +188,12 @@ func (m *projectModel) Select() ([]*Project, error) {
 	return projects, nil
 }
 
-func (m *projectModel) GetProjectByCond(cond *ProjectCond, pageIndex, pageSize int) ([]*Project, error) {
+func (m *projectModel) GetProjectByCond(cond *ProjectCond, sortCond string, pageIndex, pageSize int) ([]*Project, error) {
 	if pageIndex < 1 {
 		pageIndex = 1
 	}
 	sqlCond, args := m.buildProjectCond(cond)
-	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ?  %s order by created_at desc limit %d,%d", m.table, sqlCond, (pageIndex-1)*pageSize, pageSize)
+	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ?  %s order by %s created_at desc limit %d,%d", m.table, sqlCond, sortCond, (pageIndex-1)*pageSize, pageSize)
 
 	var projects []*Project
 	if err := db.Select(&projects, sqlStr, append([]interface{}{ProjectDeletedNo}, args...)...); err != nil {

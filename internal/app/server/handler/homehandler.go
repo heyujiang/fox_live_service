@@ -65,7 +65,13 @@ func (h *homeHandler) PersonCapacity(c *gin.Context) {
 }
 
 func (h *homeHandler) UserData(c *gin.Context) {
-	res, err := home.BisLogic.UserData()
+	var req home.ReqUserData
+	if err := c.ShouldBindQuery(&req); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
+
+	res, err := home.BisLogic.UserData(&req)
 	if err != nil {
 		common.ResponseErr(c, err)
 		return

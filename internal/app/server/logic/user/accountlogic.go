@@ -27,6 +27,8 @@ type (
 		Job         string `json:"job"`
 		PhoneNumber string `json:"phoneNumber"`
 		CreatedAt   string `json:"createdAt"`
+		IsSuper     int    `json:"isSuper"`
+		IsSystem    int    `json:"isSystem"`
 	}
 
 	ReqUpdateAvatar struct {
@@ -70,7 +72,11 @@ func (a *accountLogic) UserInfo(uid int) (*RespAccountUserInfo, error) {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取账户信息出错")
 	}
 	roleNames := make([]string, 0, len(roles))
+	isSuper := 0
 	for _, v := range roles {
+		if v.Id == model.SuperManagerRoleId {
+			isSuper = 1
+		}
 		roleNames = append(roleNames, v.Title)
 	}
 
@@ -94,6 +100,8 @@ func (a *accountLogic) UserInfo(uid int) (*RespAccountUserInfo, error) {
 		Job:         user.Job,
 		PhoneNumber: user.PhoneNumber,
 		CreatedAt:   user.CreatedAt.Format(global.TimeFormat),
+		IsSuper:     isSuper,
+		IsSystem:    user.IsSystem,
 	}, nil
 
 }

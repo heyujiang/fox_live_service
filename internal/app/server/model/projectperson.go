@@ -60,8 +60,8 @@ func (m *projectPersonModel) Create(projectPerson *ProjectPerson) error {
 }
 
 func (m *projectPersonModel) Delete(id, uid int) error {
-	sqlStr := fmt.Sprintf("update %s set `is_deleted` = ? , `updated_id` = ? where `id` = %d", m.table, id)
-	_, err := db.Exec(sqlStr, ProjectDeletedYes, uid)
+	sqlStr := fmt.Sprintf("update %s set `is_deleted` = ? where `id` = %d", m.table, id)
+	_, err := db.Exec(sqlStr, ProjectDeletedYes)
 	if err != nil {
 		slog.Error("delete project person err ", "sql", sqlStr, "err ", err.Error())
 		return err
