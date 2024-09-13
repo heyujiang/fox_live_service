@@ -20,8 +20,8 @@ const (
 const (
 	ProjectStateWait      = iota + 1 // 待定
 	ProjectStateRecommend            // 推荐
-	ProjectStateStop                 // 终止
 	ProjectStateFinished             // 已完成
+	ProjectStateStop                 // 终止
 )
 
 const (
@@ -57,8 +57,8 @@ var (
 	ProjectStateDesc = map[int]string{
 		ProjectStateWait:      "待定",
 		ProjectStateRecommend: "推荐",
-		ProjectStateStop:      "终止",
 		ProjectStateFinished:  "已完成",
+		ProjectStateStop:      "终止",
 	}
 
 	ProjectTypeDesc = map[int]string{
