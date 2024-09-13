@@ -858,8 +858,10 @@ func (b *bisLogic) PersonCapacity() ([]*RespPersonCapacityItem, error) {
 	projectCap := make(map[int]float64, len(projects))
 	projectIds := make([]int, 0)
 	for _, v := range projects {
-		projectCap[v.Id] += v.Capacity
-		projectIds = append(projectIds, v.Id)
+		if v.State != model.ProjectStateStop {
+			projectCap[v.Id] += v.Capacity
+			projectIds = append(projectIds, v.Id)
+		}
 	}
 
 	projectPersons, err := model.ProjectPersonModel.SelectByProjectIds(projectIds)
