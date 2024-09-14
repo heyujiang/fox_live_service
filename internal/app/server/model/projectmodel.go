@@ -165,6 +165,16 @@ func (m *projectModel) UpdateFirstPerson(projectId int, userId int, userName str
 	return nil
 }
 
+func (m *projectModel) UpdateSchedule(projectId int, schedule float64, uid int) error {
+	sqlStr := fmt.Sprintf("update %s set  `schedule` = ? , `updated_id`= ? where `id` = %d", m.table, projectId)
+	_, err := db.Exec(sqlStr, schedule, uid)
+	if err != nil {
+		slog.Error("update project schedule err ", "sql", sqlStr, "err ", err.Error())
+		return err
+	}
+	return nil
+}
+
 func (m *projectModel) Find(id int) (*Project, error) {
 	sqlStr := fmt.Sprintf("select * from %s where `id` = ? and `is_deleted` = ? limit 1", m.table)
 	project := new(Project)

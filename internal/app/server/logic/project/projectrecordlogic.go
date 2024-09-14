@@ -140,6 +140,10 @@ func (b *recordLogic) Create(req *ReqCreateProjectRecord, uid int, username stri
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目节点错误")
 	}
 
+	if projectNode.State == model.ProjectNodeStateFinished && req.State == model.ProjectRecordStateIng {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "当前节点已完成，不可添加进行中的进度")
+	}
+
 	projectRecord := &model.ProjectRecord{
 		ProjectId:   req.ProjectId,
 		ProjectName: project.Name,
@@ -164,6 +168,40 @@ func (b *recordLogic) Create(req *ReqCreateProjectRecord, uid int, username stri
 		if err := model.ProjectNodeModel.UpdateProjectNodeState(projectNode.Id, model.ProjectNodeStateInProcess, uid); err != nil {
 			return nil, errorx.NewErrorX(errorx.ErrCommon, "修改项目状态出错")
 		}
+	}
+
+	// 更新父节点状态
+	parentProjectNodeState := model.ProjectNodeStateWaitBegin
+	parentProjectNodeFinishFlag := true
+	childNodes, err := model.ProjectNodeModel.GetChildNode(req.ProjectId, projectNode.PId)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "更新父节点的状态出错")
+	}
+	for _, childNode := range childNodes {
+		if childNode.State == model.ProjectNodeStateInProcess {
+			parentProjectNodeState = model.ProjectNodeStateInProcess
+			parentProjectNodeFinishFlag = false
+			break
+		} else if childNode.State == model.ProjectNodeStateWaitBegin {
+			parentProjectNodeFinishFlag = false
+		} else if childNode.State == model.ProjectNodeStateFinished {
+			parentProjectNodeState = model.ProjectNodeStateInProcess
+		}
+	}
+	if parentProjectNodeFinishFlag {
+		parentProjectNodeState = model.ProjectNodeStateFinished
+	}
+	if err := model.ProjectNodeModel.UpdateStateByNodeId(req.ProjectId, projectNode.PId, parentProjectNodeState, uid); err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "修改上级节点状态出错")
+	}
+
+	// 更新项目进度
+	progress, err := BisLogic.CalcProjectProgress(req.ProjectId)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "计算项目总进度出错")
+	}
+	if err := model.ProjectModel.UpdateSchedule(req.ProjectId, progress, uid); err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "修改项目进度出错")
 	}
 
 	if req.File != nil {

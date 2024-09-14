@@ -110,6 +110,16 @@ func (m *projectNodeModel) UpdateProjectNodeState(id int, state, uid int) error 
 	return nil
 }
 
+func (m *projectNodeModel) UpdateStateByNodeId(projectId, nodeId int, state, uid int) error {
+	sqlStr := fmt.Sprintf("update %s set `state` = ? , `updated_id`= ?  where `project_id` = %d and `node_id` = %d", m.table, projectId, nodeId)
+	_, err := db.Exec(sqlStr, state, uid)
+	if err != nil {
+		slog.Error("update project node state err ", "sql", sqlStr, "state", state, "err ", err.Error())
+		return err
+	}
+	return nil
+}
+
 func (m *projectNodeModel) BatchInsert(projectNodes []*ProjectNode) error {
 	if len(projectNodes) == 0 {
 		return nil
@@ -153,6 +163,26 @@ func (m *projectNodeModel) GetByProjectIds(projectIds []int) ([]*ProjectNode, er
 
 	if err := db.Select(&projectNodes, query, args...); err != nil {
 		slog.Error("get all project node by project_ids and user_id error ", "sql", sqlStr, "projectIds", projectIds, "err", err.Error())
+		return nil, err
+	}
+	return projectNodes, nil
+}
+
+func (m *projectNodeModel) GetChildNode(projectId, nodePid int) ([]*ProjectNode, error) {
+	var projectNodes []*ProjectNode
+	query := fmt.Sprintf("select * from %s where `project_id` = ? and `p_id` = ? ", m.table)
+	if err := db.Select(&projectNodes, query, projectId, nodePid); err != nil {
+		slog.Error("get project child node by projectId and nodePId error ", "sql", query, "projectId", projectId, "nodeId", nodePid, "err", err.Error())
+		return nil, err
+	}
+	return projectNodes, nil
+}
+
+func (m *projectNodeModel) GetAllChild(projectId int) ([]*ProjectNode, error) {
+	var projectNodes []*ProjectNode
+	query := fmt.Sprintf("select * from %s where `project_id` = ? and `p_id` > 0 ", m.table)
+	if err := db.Select(&projectNodes, query, projectId); err != nil {
+		slog.Error("get all project child node by projectId ", "sql", query, "projectId", projectId, "err", err.Error())
 		return nil, err
 	}
 	return projectNodes, nil
