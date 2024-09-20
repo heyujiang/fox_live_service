@@ -3,6 +3,7 @@ package node
 import (
 	"errors"
 	"fox_live_service/config/global"
+	"fox_live_service/internal/app/server/logic"
 	"fox_live_service/internal/app/server/model"
 	"fox_live_service/pkg/errorx"
 	"golang.org/x/exp/slog"
@@ -29,9 +30,11 @@ type (
 	}
 
 	ReqCreateNode struct {
-		Name string `json:"name"`
-		Pid  int    `json:"pid"`
-		Sort int    `json:"sort"`
+		Name       string `json:"name"`
+		Pid        int    `json:"pid"`
+		Sort       int    `json:"sort"`
+		SyncAll    int    `json:"syncAll"`
+		ProjectIds []int  `json:"projectIds"`
 	}
 
 	RespCreateNode struct{}
@@ -139,12 +142,68 @@ func (b *bisLogic) Create(req *ReqCreateNode, uid int) (*RespCreateNode, error) 
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "创建节点失败")
 	}
 
+	projectIds := req.ProjectIds
+	if req.SyncAll == 1 {
+		projects, err := model.ProjectModel.GetAllNoFinished()
+		if err != nil {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "获取未完成项目出错")
+		}
+		projectIds = make([]int, 0, len(projectIds))
+		for _, v := range projects {
+			projectIds = append(projectIds, v.Id)
+		}
+	}
+	if len(projectIds) > 0 {
+		// 同步项目节点
+		for _, v := range projectIds {
+			go b.syncProjectNode(&insertNode, v, uid)
+		}
+	}
+
 	return &RespCreateNode{}, nil
 }
 
+func (b *bisLogic) syncProjectNode(node *model.Node, projectId int, uid int) {
+	if node.Pid > 0 {
+		pNode, err := model.ProjectNodeModel.FindByProjectIdAndNodeId(projectId, node.Pid)
+		if err != nil {
+			slog.Error("sync project node info error ", "err", err.Error())
+		}
+
+		if pNode.State == model.ProjectNodeStateFinished { //修改状态为进行中
+			if err := model.ProjectNodeModel.UpdateProjectNodeState(pNode.Id, model.ProjectNodeStateInProcess, uid); err != nil {
+				slog.Error("sync project node info error ", "err", err.Error())
+			}
+		}
+	}
+
+	if err := model.ProjectNodeModel.Insert(&model.ProjectNode{
+		ProjectId: projectId,
+		PId:       node.Pid,
+		NodeId:    node.Id,
+		Name:      node.Name,
+		IsLeaf:    node.IsLeaf,
+		Sort:      node.Sort,
+		State:     model.ProjectNodeStateWaitBegin,
+		CreatedId: uid,
+		UpdatedId: uid,
+	}); err != nil {
+		slog.Error("sync project node info error ", "err", err.Error())
+	}
+
+	schedule, err := logic.CalcProjectProgress(projectId)
+	if err != nil {
+		slog.Error("sync project node info error ", "err", err.Error())
+	}
+
+	if err := model.ProjectModel.UpdateSchedule(projectId, schedule, uid); err != nil {
+		slog.Error("sync project node info error ", "err", err.Error())
+	}
+}
+
 // Delete 删除节点
-func (b *bisLogic) Delete(req *ReqDeleteNode) (*RespDeleteNode, error) {
-	_, err := model.NodeModel.Find(req.Id)
+func (b *bisLogic) Delete(req *ReqDeleteNode, uid int) (*RespDeleteNode, error) {
+	node, err := model.NodeModel.Find(req.Id)
 	if err != nil {
 		slog.Error("delete node get node error ", "id", req.Id, "err", err)
 		if errors.Is(err, model.ErrNotRecord) {
@@ -153,12 +212,54 @@ func (b *bisLogic) Delete(req *ReqDeleteNode) (*RespDeleteNode, error) {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询节点错误")
 	}
 
+	if node.IsLeaf == model.NodeLeafNo {
+		nodes, err := model.NodeModel.SelectByPid(node.Id)
+		if err != nil {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "查询子节点错误")
+		}
+		if len(nodes) > 0 {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "存在子节点，不可删除")
+		}
+	}
+
 	if err := model.NodeModel.Delete(req.Id); err != nil {
 		slog.Error("delete node error ", "id", req.Id, "err", err)
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "删除节点信息错误")
 	}
 
+	projects, err := model.ProjectModel.GetAllNoFinished()
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取未完成项目出错")
+	}
+
+	for _, v := range projects {
+		go b.delProjectNode(v.Id, req.Id, uid)
+	}
+
 	return &RespDeleteNode{}, nil
+}
+
+func (b *bisLogic) delProjectNode(projectId, nodeId, uid int) {
+	if err := model.ProjectNodeModel.DelNode(projectId, nodeId); err != nil {
+		slog.Error("delete project node error ", "id", nodeId, "err", err)
+	}
+
+	if err := model.ProjectRecordModel.DeleteByProjectIdAndNodeId(projectId, nodeId, uid); err != nil {
+		slog.Error("delete project node error ", "id", nodeId, "err", err)
+	}
+
+	if err := model.ProjectAttachedModel.DeleteByProjectIdAndNodeId(projectId, nodeId); err != nil {
+		slog.Error("delete project node error ", "id", nodeId, "err", err)
+	}
+
+	schedule, err := logic.CalcProjectProgress(projectId)
+	if err != nil {
+		slog.Error("sync project node info error ", "err", err.Error())
+	}
+
+	if err := model.ProjectModel.UpdateSchedule(projectId, schedule, uid); err != nil {
+		slog.Error("sync project node info error ", "err", err.Error())
+	}
 }
 
 // Update 修改节点信息
@@ -344,4 +445,21 @@ func (b *bisLogic) GetAllTreeNodes() ([]*TreeItem, error) {
 	}
 
 	return nodePIdMap[0], nil
+}
+
+func (b *bisLogic) ProjectOptions() ([]*logic.RespOption, error) {
+	projects, err := model.ProjectModel.GetAllNoFinished()
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目列表出错")
+	}
+
+	res := make([]*logic.RespOption, 0, len(projects))
+	for _, project := range projects {
+		res = append(res, &logic.RespOption{
+			Label: project.Name,
+			Value: project.Id,
+		})
+	}
+
+	return res, nil
 }

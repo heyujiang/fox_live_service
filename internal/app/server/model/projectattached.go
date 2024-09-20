@@ -82,6 +82,16 @@ func (m *projectAttachedModel) DeleteByProjectId(projectId int) error {
 	return nil
 }
 
+func (m *projectAttachedModel) DeleteByProjectIdAndNodeId(projectId int, nodeId int) error {
+	sqlStr := fmt.Sprintf("update %s set `is_deleted` = ? where `project_id` = %d and `node_id` = %d", m.table, projectId, nodeId)
+	_, err := db.Exec(sqlStr, ProjectDeletedYes)
+	if err != nil {
+		slog.Error("delete project attached by project id err ", "sql", sqlStr, "project_id", projectId, "node_id", nodeId, "err ", err.Error())
+		return err
+	}
+	return nil
+}
+
 func (m *projectAttachedModel) Find(id int) (*ProjectAttached, error) {
 	sqlStr := fmt.Sprintf("select * from %s where `id` = ? and `is_deleted` = ? limit 1", m.table)
 	projectAttached := new(ProjectAttached)

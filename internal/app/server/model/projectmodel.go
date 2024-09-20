@@ -350,3 +350,21 @@ func (m *projectModel) SelectLatestProject(beginTime *time.Time, notExistIds, ex
 	}
 	return projects, nil
 }
+
+func (m *projectModel) GetAllNoFinished() ([]*Project, error) {
+	projects := make([]*Project, 0)
+
+	sqlStr := fmt.Sprintf("select * from %s where `is_deleted` = ? and `state` in (? , ?) order by created_at ", m.table)
+	query, args, err := sqlx.In(sqlStr, ProjectDeletedNo, ProjectStateWait, ProjectStateRecommend)
+
+	if err != nil {
+		slog.Error("get all not finished project error", "sql", sqlStr, "err ", err.Error())
+		return nil, err
+	}
+
+	if err := db.Select(&projects, query, args...); err != nil {
+		slog.Error("get all not finished project error", "sql", sqlStr, "err ", err.Error())
+		return nil, err
+	}
+	return projects, nil
+}

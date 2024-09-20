@@ -137,6 +137,15 @@ func (m *projectNodeModel) BatchInsert(projectNodes []*ProjectNode) error {
 	return err
 }
 
+func (m *projectNodeModel) Insert(projectNode *ProjectNode) error {
+	querySql := `insert into ` + m.table + `(` + insertProjectNodeStr + `) values (?,?,?,?,?,?,?,?,?)`
+	_, err := db.Exec(querySql, projectNode.ProjectId, projectNode.PId, projectNode.NodeId, projectNode.Name, projectNode.IsLeaf, projectNode.Sort, projectNode.State, projectNode.CreatedId, projectNode.UpdatedId)
+	if err != nil {
+		slog.Error("insert project node error", "err", err)
+	}
+	return err
+}
+
 func (m *projectNodeModel) SelectByProjectId(projectId int) ([]*ProjectNode, error) {
 	sqlStr := fmt.Sprintf("select * from %s where `project_id` = ? order by sort asc , node_id asc", m.table)
 	projectNodes := make([]*ProjectNode, 0)
@@ -186,4 +195,14 @@ func (m *projectNodeModel) GetAllChild(projectId int) ([]*ProjectNode, error) {
 		return nil, err
 	}
 	return projectNodes, nil
+}
+
+func (m *projectNodeModel) DelNode(projectId, nodeId int) error {
+	var projectNodes []*ProjectNode
+	sqlStr := fmt.Sprintf("delete from %s where `project_id` = ? and `node_id` = ? ", m.table)
+	if err := db.Select(&projectNodes, sqlStr, projectId, nodeId); err != nil {
+		slog.Error("get all project child node by projectId ", "sql", sqlStr, "projectId", projectId, "err", err.Error())
+		return err
+	}
+	return nil
 }

@@ -196,7 +196,7 @@ func (b *recordLogic) Create(req *ReqCreateProjectRecord, uid int, username stri
 	}
 
 	// 更新项目进度
-	progress, err := BisLogic.CalcProjectProgress(req.ProjectId)
+	progress, err := logic.CalcProjectProgress(req.ProjectId)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "计算项目总进度出错")
 	}

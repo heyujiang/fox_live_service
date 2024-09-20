@@ -17,4 +17,5 @@ func registerNode(e *gin.Engine) {
 	node.GET("", handler.NodeHandler.List)
 	node.GET("/parent", handler.NodeHandler.Parent)
 	node.GET("/options", handler.NodeHandler.Options)
+	node.GET("/projectOptions", handler.NodeHandler.ProjectOptions)
 }

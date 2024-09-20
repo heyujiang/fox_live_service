@@ -94,7 +94,7 @@ func (n *nodeHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	res, err := node.BisLogic.Delete(&req)
+	res, err := node.BisLogic.Delete(&req, c.GetInt("uid"))
 	if err != nil {
 		common.ResponseErr(c, err)
 		return
@@ -117,6 +117,17 @@ func (n *nodeHandler) Parent(c *gin.Context) {
 
 func (n *nodeHandler) Options(c *gin.Context) {
 	res, err := node.BisLogic.Options()
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+
+	common.ResponseOK(c, res)
+	return
+}
+
+func (n *nodeHandler) ProjectOptions(c *gin.Context) {
+	res, err := node.BisLogic.ProjectOptions()
 	if err != nil {
 		common.ResponseErr(c, err)
 		return

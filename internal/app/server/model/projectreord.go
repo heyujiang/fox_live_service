@@ -91,6 +91,16 @@ func (m *projectRecordModel) DeleteByProjectId(projectId, uid int) error {
 	return nil
 }
 
+func (m *projectRecordModel) DeleteByProjectIdAndNodeId(projectId, nodeId, uid int) error {
+	sqlStr := fmt.Sprintf("update %s set `is_deleted` = ? , `updated_id` = ? where `project_id` = %d and `node_id` = %d", m.table, projectId, nodeId)
+	_, err := db.Exec(sqlStr, ProjectDeletedYes, uid)
+	if err != nil {
+		slog.Error("delete project record by project id and node id err ", "sql", sqlStr, "project_id", projectId, "node_id", nodeId, "err ", err.Error())
+		return err
+	}
+	return nil
+}
+
 func (m *projectRecordModel) Update(projectRecord *ProjectRecord) error {
 	sqlStr := fmt.Sprintf("update %s set `overview` = ? , `updated_id`= ? where `id` = %d", m.table, projectRecord.Id)
 	_, err := db.Exec(sqlStr, projectRecord.Overview, projectRecord.UpdatedId)
