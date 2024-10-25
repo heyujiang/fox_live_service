@@ -25,6 +25,11 @@ const (
 )
 
 const (
+	ProjectWaitAudit = iota
+	ProjectAudited
+)
+
+const (
 	ProjectTypeWind                   = iota + 1 // 风电
 	ProjectTypeLight                             // 光伏
 	ProjectTypeWindAndLight                      // 风电+光伏
@@ -94,6 +99,7 @@ type (
 		InvestmentAgreement string    `db:"investment_agreement"`
 		BusinessCondition   string    `db:"business_condition"`
 		BeginTime           time.Time `db:"begin_time"`
+		IsAudit             int       `db:"is_audit"`
 		IsDeleted           int       `db:"is_deleted"`
 		CreatedId           int       `db:"created_id"`
 		UpdatedId           int       `db:"updated_id"`
@@ -112,6 +118,8 @@ type (
 		Star      int
 		Type      int
 		Ids       []int
+		State     int
+		IsAudit   int
 	}
 )
 
@@ -275,6 +283,16 @@ func (m *projectModel) buildProjectCond(cond *ProjectCond) (sqlCond string, args
 		args = append(args, cond.CreatedAt[0], cond.CreatedAt[1])
 	}
 
+	if cond.State != 0 {
+		sqlCond += " and state = ?"
+		args = append(args, cond.State)
+	}
+
+	if cond.IsAudit == ProjectAudited {
+		sqlCond += " and is_audit = ?"
+		args = append(args, ProjectAudited)
+	}
+
 	return
 }
 
@@ -367,4 +385,14 @@ func (m *projectModel) GetAllNoFinished() ([]*Project, error) {
 		return nil, err
 	}
 	return projects, nil
+}
+
+func (m *projectModel) Audit(id int, uid int) error {
+	sqlStr := fmt.Sprintf("update %s set `is_audit` = ? , `updated_id`= ?  where `id` = %d and `is_deleted` = %d", m.table, id, ProjectDeletedNo)
+	_, err := db.Exec(sqlStr, ProjectAudited, uid)
+	if err != nil {
+		slog.Error("audit project err ", "sql", sqlStr, "err ", err.Error())
+		return err
+	}
+	return nil
 }

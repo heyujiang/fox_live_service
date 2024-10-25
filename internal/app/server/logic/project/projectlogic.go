@@ -132,6 +132,7 @@ type (
 		InvestmentAgreement string  `json:"investmentAgreement"`
 		BusinessCondition   string  `json:"businessCondition"`
 		BeginTime           string  `json:"beginTime"`
+		IsAudit             int     `json:"isAudit"`
 		CreatedId           int     `json:"createdId"`
 		UpdatedId           int     `json:"updatedId"`
 		CreatedAt           string  `json:"createdAt"`
@@ -151,6 +152,8 @@ type (
 		Star      int     `form:"star"`
 		Type      int     `form:"type"`
 		Progress  int     `form:"progress"` //1 有进展 2 无进展
+		State     int     `form:"state"`
+		IsAudit   int     `form:"isAudit"`
 		CreatedAt []int64 `form:"createdAt[]"`
 	}
 
@@ -180,6 +183,7 @@ type (
 		InvestmentAgreement string  `json:"investmentAgreement"`
 		BusinessCondition   string  `json:"businessCondition"`
 		BeginTime           string  `json:"beginTime"`
+		IsAudit             int     `json:"isAudit"`
 		CreatedAt           string  `json:"createdAt"`
 		UpdatedAt           string  `json:"updatedAt"`
 	}
@@ -213,6 +217,12 @@ type (
 	RespExport struct {
 		Data *bytes.Buffer `json:"data"`
 	}
+
+	ReqAudit struct {
+		Id int `uri:"id"`
+	}
+
+	RespAudit struct{}
 )
 
 func newBisLogic() *bisLogic {
@@ -552,6 +562,7 @@ func (b *bisLogic) Info(req *ReqInfoProject, uid int) (*RespInfoProject, error) 
 		InvestmentAgreement: project.InvestmentAgreement,
 		BusinessCondition:   project.BusinessCondition,
 		BeginTime:           project.BeginTime.Format(global.DateFormat),
+		IsAudit:             project.IsAudit,
 		CreatedId:           project.CreatedId,
 		UpdatedId:           project.UpdatedId,
 		CreatedAt:           project.CreatedAt.Format(global.TimeFormat),
@@ -604,6 +615,7 @@ func (b *bisLogic) List(req *ReqProjectList, uid int) (*RespProjectList, error) 
 			InvestmentAgreement: pro.InvestmentAgreement,
 			BusinessCondition:   pro.BusinessCondition,
 			BeginTime:           pro.BeginTime.Format(global.DateFormat),
+			IsAudit:             pro.IsAudit,
 			CreatedAt:           pro.CreatedAt.Format(global.TimeFormat),
 			UpdatedAt:           pro.CreatedAt.Format(global.TimeFormat),
 		})
@@ -639,6 +651,11 @@ func (b *bisLogic) buildSearchCond(req *ReqProjectList, projectIds []int) *model
 	if req.Type != 0 {
 		cond.Type = req.Type
 	}
+
+	if req.State != 0 {
+		cond.State = req.State
+	}
+	cond.IsAudit = req.IsAudit
 
 	if len(req.CreatedAt) == 2 {
 		cond.CreatedAt = []time.Time{time.UnixMilli(req.CreatedAt[0]), time.UnixMilli(req.CreatedAt[1])}
@@ -939,4 +956,28 @@ func (b *bisLogic) Export(req *ReqFromProjectList, uid int) (*RespExport, error)
 	return &RespExport{
 		Data: res,
 	}, nil
+}
+
+func (b *bisLogic) AuditProject(req *ReqAudit, uid int) (*RespAudit, error) {
+	_, err := model.ProjectModel.Find(req.Id)
+	if err != nil {
+		if errors.Is(err, model.ErrNotRecord) {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "项目不存在")
+		}
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目出错")
+	}
+
+	hasProject, err := PersonLogic.CheckUserHasProject(uid, req.Id)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
+	}
+	if !hasProject {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "项目不存在")
+	}
+
+	if err := model.ProjectModel.Audit(req.Id, uid); err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "审核项目失败")
+	}
+
+	return &RespAudit{}, nil
 }

@@ -164,3 +164,21 @@ func (h *projectHandler) Export(c *gin.Context) {
 	http.ServeContent(c.Writer, c.Request, "project.xlsx", time.Now(), r)
 	return
 }
+
+// Audit 审核项目
+func (h *projectHandler) Audit(c *gin.Context) {
+	var req project.ReqAudit
+	if err := c.ShouldBindUri(&req); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
+
+	res, err := project.BisLogic.AuditProject(&req, c.GetInt("uid"))
+	if err != nil {
+		common.ResponseErr(c, err)
+		return
+	}
+
+	common.ResponseOK(c, res)
+	return
+}

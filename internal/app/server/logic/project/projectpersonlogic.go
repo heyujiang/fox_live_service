@@ -174,6 +174,14 @@ func (b *personLogic) Delete(req *ReqDeleteProjectPerson, uid int) (*RespDeleteP
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "不属于当前项目的项目成员")
 	}
 
+	persons, err := model.ProjectPersonModel.SelectByProjectId(proPerson.ProjectId)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目成员出错")
+	}
+	if len(persons) == 1 {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "项目成员必须保留一个")
+	}
+
 	if err := model.ProjectPersonModel.Delete(req.Id, uid); err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "删除项目成员失败")
 	}

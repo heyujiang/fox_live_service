@@ -101,6 +101,23 @@ func (b *contactLogic) Create(req *ReqCreateProjectContact, uid int) (*RespCreat
 }
 
 func (b *contactLogic) Delete(req *ReqDeleteProjectContact) (*RespDeleteProjectContact, error) {
+	proContact, err := model.ProjectContactModel.Find(req.Id)
+	if err != nil {
+		if errors.Is(err, model.ErrNotRecord) {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "联系人不存在")
+		} else {
+			return nil, errorx.NewErrorX(errorx.ErrCommon, "查询联系人出错")
+		}
+	}
+
+	persons, err := model.ProjectContactModel.SelectByProjectId(proContact.ProjectId)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询联系人出错")
+	}
+	if len(persons) == 1 {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "联系人必须保留一个")
+	}
+
 	if err := model.ProjectContactModel.Delete(req.Id); err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "删除项目联系人失败")
 	}

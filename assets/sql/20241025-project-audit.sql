@@ -1,0 +1,1 @@
+alter table `project` add column  `is_audit` tinyint not null default 0 comment '是否审核，0否，1是' after `is_deleted`;
