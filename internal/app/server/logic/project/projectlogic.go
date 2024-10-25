@@ -287,6 +287,9 @@ func (b *bisLogic) Create(req *ReqCreateProject, uid int) (*RespCreateProject, e
 		UpdatedId:           uid,
 	}
 	projectId, err := model.ProjectModel.Create(projectIns)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "创建项目失败")
+	}
 
 	for i, _ := range projectNodes {
 		projectNodes[i].ProjectId = projectId
