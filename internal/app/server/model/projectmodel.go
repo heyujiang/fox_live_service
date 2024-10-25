@@ -163,6 +163,16 @@ func (m *projectModel) Update(project *Project) error {
 	return nil
 }
 
+func (m *projectModel) UpdateAfterRecord(project *Project) error {
+	sqlStr := fmt.Sprintf("update %s set `node_id` = ? , `node_name` = ?, `schedule`= ?, `updated_id`= ? where `id` = %d", m.table, project.Id)
+	_, err := db.Exec(sqlStr, project.NodeId, project.NodeName, project.Schedule, project.UpdatedId)
+	if err != nil {
+		slog.Error("update project after create record err ", "sql", sqlStr, "err ", err.Error())
+		return err
+	}
+	return nil
+}
+
 func (m *projectModel) UpdateFirstPerson(projectId int, userId int, userName string, uid int) error {
 	sqlStr := fmt.Sprintf("update %s set  `user_id` = ? , `username` = ?, `updated_id`= ? where `id` = %d", m.table, projectId)
 	_, err := db.Exec(sqlStr, userId, userName, uid)

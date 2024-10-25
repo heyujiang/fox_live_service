@@ -2,6 +2,7 @@ package project
 
 import (
 	"errors"
+	"fmt"
 	"fox_live_service/config/global"
 	"fox_live_service/internal/app/server/logic"
 	"fox_live_service/internal/app/server/model"
@@ -195,13 +196,23 @@ func (b *recordLogic) Create(req *ReqCreateProjectRecord, uid int, username stri
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "修改上级节点状态出错")
 	}
 
+	//项目当前节点
+	project.NodeId = req.NodeId
+	pNode, err := model.ProjectNodeModel.Find(projectNode.PId)
+	if err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "获取上级节点出错")
+	}
+	project.NodeName = fmt.Sprintf("%s/%s", pNode.Name, projectNode.Name)
+
 	// 更新项目进度
 	progress, err := logic.CalcProjectProgress(req.ProjectId)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "计算项目总进度出错")
 	}
-	if err := model.ProjectModel.UpdateSchedule(req.ProjectId, progress, uid); err != nil {
-		return nil, errorx.NewErrorX(errorx.ErrCommon, "修改项目进度出错")
+	project.Schedule = progress
+	project.UpdatedId = uid
+	if err := model.ProjectModel.UpdateAfterRecord(project); err != nil {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "修改项目信息出错")
 	}
 
 	if req.File != nil {
