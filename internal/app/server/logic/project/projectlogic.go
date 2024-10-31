@@ -218,8 +218,17 @@ type (
 		Data *bytes.Buffer `json:"data"`
 	}
 
-	ReqAudit struct {
+	ReqUriAudit struct {
 		Id int `uri:"id"`
+	}
+
+	ReqBodyAudit struct {
+		IsAudit int `json:"isAudit"`
+	}
+
+	ReqAudit struct {
+		ReqUriAudit
+		ReqBodyAudit
 	}
 
 	RespAudit struct{}
@@ -970,6 +979,10 @@ func (b *bisLogic) AuditProject(req *ReqAudit, uid int) (*RespAudit, error) {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "查询项目出错")
 	}
 
+	if req.IsAudit != model.ProjectWaitAudit && req.IsAudit != model.ProjectAudited {
+		return nil, errorx.NewErrorX(errorx.ErrCommon, "审核状态不正确")
+	}
+
 	hasProject, err := PersonLogic.CheckUserHasProject(uid, req.Id)
 	if err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, err.Error())
@@ -978,7 +991,7 @@ func (b *bisLogic) AuditProject(req *ReqAudit, uid int) (*RespAudit, error) {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "项目不存在")
 	}
 
-	if err := model.ProjectModel.Audit(req.Id, uid); err != nil {
+	if err := model.ProjectModel.Audit(req.Id, req.IsAudit, uid); err != nil {
 		return nil, errorx.NewErrorX(errorx.ErrCommon, "审核项目失败")
 	}
 

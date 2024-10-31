@@ -167,12 +167,22 @@ func (h *projectHandler) Export(c *gin.Context) {
 
 // Audit 审核项目
 func (h *projectHandler) Audit(c *gin.Context) {
-	var req project.ReqAudit
-	if err := c.ShouldBindUri(&req); err != nil {
+	var reqUri project.ReqUriAudit
+	if err := c.ShouldBindUri(&reqUri); err != nil {
 		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
 		return
 	}
 
+	var reqBody project.ReqBodyAudit
+	if err := c.ShouldBindJSON(&reqBody); err != nil {
+		common.ResponseErr(c, errorx.NewErrorX(errorx.ErrParam, "param error"))
+		return
+	}
+
+	var req = project.ReqAudit{
+		ReqUriAudit:  reqUri,
+		ReqBodyAudit: reqBody,
+	}
 	res, err := project.BisLogic.AuditProject(&req, c.GetInt("uid"))
 	if err != nil {
 		common.ResponseErr(c, err)

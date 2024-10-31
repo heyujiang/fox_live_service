@@ -397,9 +397,9 @@ func (m *projectModel) GetAllNoFinished() ([]*Project, error) {
 	return projects, nil
 }
 
-func (m *projectModel) Audit(id int, uid int) error {
+func (m *projectModel) Audit(id int, isAudit int, uid int) error {
 	sqlStr := fmt.Sprintf("update %s set `is_audit` = ? , `updated_id`= ?  where `id` = %d and `is_deleted` = %d", m.table, id, ProjectDeletedNo)
-	_, err := db.Exec(sqlStr, ProjectAudited, uid)
+	_, err := db.Exec(sqlStr, isAudit, uid)
 	if err != nil {
 		slog.Error("audit project err ", "sql", sqlStr, "err ", err.Error())
 		return err
